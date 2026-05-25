@@ -1,0 +1,98 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum RecognitionStatus {
+  PENDING
+  PROCESSING
+  SUCCESS
+  FAILED
+}
+
+enum ImageSide {
+  FRONT
+  BACK
+}
+
+model User {
+  id           String   @id @default(cuid())
+  username     String   @unique
+  email        String?  @unique
+  passwordHash String
+  displayName  String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  cards    Card[]
+  llmLogs  LlmLog[]
+
+  @@index([username])
+}
+
+model Card {
+  id                String            @id @default(cuid())
+  userId            String
+  user              User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  fullName          String?
+  nameReading       String?
+  company           String?
+  title             String?
+  email             String?
+  phone             String?
+  mobilePhone       String?
+  address           String?
+  website           String?
+  department        String?
+  fax               String?
+  notes             String?
+  rawText           String?
+
+  recognitionStatus RecognitionStatus @default(PENDING)
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+
+  images            CardImage[]
+  llmLogs           LlmLog[]
+
+  @@index([userId, createdAt(sort: Desc)])
+}
+
+model CardImage {
+  id         String    @id @default(cuid())
+  cardId     String?
+  card       Card?     @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  side       ImageSide
+  storageKey String
+  storageUrl String
+  mimeType   String
+  sizeBytes  Int
+  createdAt  DateTime  @default(now())
+
+  @@index([cardId])
+}
+
+model LlmLog {
+  id             String   @id @default(cuid())
+  userId         String
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  cardId         String?
+  card           Card?    @relation(fields: [cardId], references: [id], onDelete: SetNull)
+
+  provider       String
+  model          String
+  requestHeaders Json
+  requestBody    Json
+  responseBody   Json
+  responseStatus Int
+  durationMs     Int
+  errorMessage   String?
+  createdAt      DateTime @default(now())
+
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([cardId])
+}
