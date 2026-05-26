@@ -42,6 +42,7 @@
   "cards": {
     "title": "名片管理",
     "upload": "上传名片",
+    "uploadBtn": "上传",
     "uploadHint": "拖拽或点击上传",
     "frontSide": "正面",
     "backSide": "反面",
@@ -51,7 +52,9 @@
     "reRecognize": "重新识别",
     "recognizeSuccess": "名片识别成功",
     "recognizeFailed": "识别失败",
-    "deleteConfirm": "确定要删除这张名片吗？",
+    "deleteConfirm": "删除确认",
+    "deleteBatchConfirm": "确定要删除选中的 {count} 张名片吗？",
+    "deleteFailed": "删除失败",
     "deleteSuccess": "名片已删除",
     "saveSuccess": "保存成功",
     "searchPlaceholder": "搜索姓名、公司、邮箱...",

@@ -42,6 +42,7 @@
   "cards": {
     "title": "Business Cards",
     "upload": "Upload Card",
+    "uploadBtn": "Upload",
     "uploadHint": "Drag & drop or click to upload",
     "frontSide": "Front Side",
     "backSide": "Back Side",
@@ -51,7 +52,9 @@
     "reRecognize": "Re-recognize",
     "recognizeSuccess": "Card recognized successfully",
     "recognizeFailed": "Recognition failed",
-    "deleteConfirm": "Are you sure you want to delete this card?",
+    "deleteConfirm": "Delete Confirmation",
+    "deleteBatchConfirm": "Delete {count} selected card(s)?",
+    "deleteFailed": "Failed to delete",
     "deleteSuccess": "Card deleted",
     "saveSuccess": "Card saved",
     "searchPlaceholder": "Search by name, company, email...",

@@ -42,6 +42,7 @@
   "cards": {
     "title": "名刺管理",
     "upload": "名刺をアップロード",
+    "uploadBtn": "アップロード",
     "uploadHint": "ドラッグ＆ドロップまたはクリックしてアップロード",
     "frontSide": "表面",
     "backSide": "裏面",
@@ -51,7 +52,9 @@
     "reRecognize": "再認識",
     "recognizeSuccess": "名刺の認識が完了しました",
     "recognizeFailed": "認識に失敗しました",
-    "deleteConfirm": "この名刺を削除してもよろしいですか？",
+    "deleteConfirm": "削除の確認",
+    "deleteBatchConfirm": "選択した{count}枚の名刺を削除しますか？",
+    "deleteFailed": "削除に失敗しました",
     "deleteSuccess": "名刺を削除しました",
     "saveSuccess": "保存しました",
     "searchPlaceholder": "名前、会社、メールで検索...",

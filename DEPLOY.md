@@ -165,7 +165,7 @@ git push origin main
 | `CLAUDE_MODEL` | `claude-sonnet-4.6` | Claude 模型 |
 | `ALIBABA_BASE_URL` | `https://dashscope-intl.aliyuncs.com/compatible-mode/v1` | 百炼 API 地址 |
 | `ALIBABA_API_KEY` | 你的百炼 API Key | 百炼密钥 |
-| `ALIBABA_MODEL` | `qwen3.7-max` | 百炼模型 |
+| `ALIBABA_MODEL` | `qwen3.7-max`（或 `qwen3.6-plus`） | 百炼模型 |
 | `STORAGE_PROVIDER` | `vercel` | 使用 Vercel Blob 存储 |
 | `BLOB_READ_WRITE_TOKEN` | （自动注入） | Vercel Blob Token |
 | `NEXT_PUBLIC_APP_URL` | 你的生产域名（如 `https://cardvault.example.com`） | 应用公开地址 |
@@ -230,7 +230,9 @@ DATABASE_URL="postgresql://..." SEED_USERNAME=admin SEED_PASSWORD=你的密码 n
 | `CLAUDE_MODEL` | Claude 模型名称 | `claude-sonnet-4.6` |
 | `ALIBABA_BASE_URL` | 阿里云百炼 API 地址（可按区域配置） | 见下方说明 |
 | `ALIBABA_API_KEY` | 阿里云百炼 API 密钥 | `sk-...` |
-| `ALIBABA_MODEL` | 百炼模型名称 | `qwen3.7-max` |
+| `ALIBABA_MODEL` | 百炼模型名称 | `qwen3.7-max` / `qwen3.6-plus` |
+
+> **qwen3.6-plus 说明**：使用 `qwen3.6-plus` 时，接口会启用 thinking 模式（`enable_thinking: true`，`thinking_budget: 8000`），输出质量更高但响应稍慢。
 
 **阿里云百炼 API 地址参考**：
 

@@ -98,17 +98,18 @@ export function CardUpload({ onUploadComplete, onClose }: CardUploadProps) {
     e.target.value = "";
   }
 
-  // Open camera: mobile uses native input, desktop uses modal
+  // Open camera: mobile uses native input, desktop uses webcam modal
   function openCamera(side: "FRONT" | "BACK") {
-    const hasGetUserMedia =
+    const isMobile =
       typeof navigator !== "undefined" &&
-      navigator.mediaDevices &&
-      typeof navigator.mediaDevices.getUserMedia === "function";
+      /Mobi|Android/i.test(navigator.userAgent);
 
-    if (!hasGetUserMedia) {
+    if (isMobile) {
+      // Mobile: trigger native camera via hidden input
       const ref = side === "FRONT" ? frontCameraRef : backCameraRef;
       ref.current?.click();
     } else {
+      // Desktop: open webcam modal (CameraCapture handles unavailable-camera error)
       setCameraSide(side);
       setCameraOpen(true);
     }

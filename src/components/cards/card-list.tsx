@@ -26,9 +26,12 @@ interface CardListProps {
   cards: CardData[];
   loading: boolean;
   hasSearch: boolean;
+  selectMode?: boolean;
+  selectedIds?: Set<string>;
+  onToggle?: (id: string) => void;
 }
 
-export function CardList({ cards, loading, hasSearch }: CardListProps) {
+export function CardList({ cards, loading, hasSearch, selectMode = false, selectedIds = new Set(), onToggle }: CardListProps) {
   const t = useTranslations("cards");
 
   if (loading) {
@@ -62,7 +65,13 @@ export function CardList({ cards, loading, hasSearch }: CardListProps) {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
       {cards.map((card) => (
-        <CardItem key={card.id} card={card} />
+        <CardItem
+          key={card.id}
+          card={card}
+          selectMode={selectMode}
+          selected={selectedIds.has(card.id)}
+          onToggle={onToggle}
+        />
       ))}
     </div>
   );

@@ -5,16 +5,14 @@ import { Link } from "@/i18n/navigation";
 import { useAuth } from "@/contexts/auth-context";
 import { LocaleSwitcher } from "./locale-switcher";
 import { useState, useRef, useEffect } from "react";
-import { LogOut, User, CreditCard, Menu, X } from "lucide-react";
+import { LogOut, User, CreditCard } from "lucide-react";
 import { useRouter } from "@/i18n/navigation";
 
 export function Header() {
   const t = useTranslations("auth");
-  const tc = useTranslations("cards");
   const { user, loading, logout } = useAuth();
   const router = useRouter();
   const [userMenuOpen, setUserMenuOpen] = useState(false);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -42,19 +40,12 @@ export function Header() {
           <Link href="/" className="flex items-center gap-2 font-bold text-lg text-blue-600">
             <CreditCard className="w-5 h-5" />
             <span>CardVault</span>
+            <span className="text-xs font-normal text-gray-400 tracking-wide">
+              v{process.env.NEXT_PUBLIC_APP_VERSION}
+            </span>
           </Link>
 
-          {/* Desktop nav */}
-          {user && (
-            <nav className="hidden md:flex items-center gap-4">
-              <Link
-                href="/cards"
-                className="text-sm text-gray-600 hover:text-gray-900 transition-colors"
-              >
-                {tc("title")}
-              </Link>
-            </nav>
-          )}
+
 
           {/* Right section */}
           <div className="flex items-center gap-2">
@@ -98,30 +89,10 @@ export function Header() {
               </Link>
             )}
 
-            {/* Mobile menu button */}
-            {user && (
-              <button
-                className="md:hidden p-1.5 rounded-lg hover:bg-gray-100"
-                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              >
-                {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-              </button>
-            )}
+
           </div>
         </div>
 
-        {/* Mobile nav */}
-        {mobileMenuOpen && user && (
-          <div className="md:hidden border-t border-gray-100 py-2">
-            <Link
-              href="/cards"
-              className="block px-2 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg"
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              {tc("title")}
-            </Link>
-          </div>
-        )}
       </div>
     </header>
   );
