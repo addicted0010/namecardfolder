@@ -40,7 +40,7 @@ export async function POST(
 
     // Prepare images for LLM
     const images = await Promise.all(
-      card.images.map(async (img) => {
+      card.images.map(async (img: { storageUrl: string; mimeType: string; side: string }) => {
         let base64: string;
 
         if (img.storageUrl.startsWith("/uploads/")) {
