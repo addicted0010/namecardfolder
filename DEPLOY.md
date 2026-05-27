@@ -136,12 +136,12 @@ git push origin main
 3. 选择你的 GitHub 仓库
 4. Framework Preset 选择 **Next.js**
 
-### 3. 配置 Vercel Postgres
+### 3. 配置 Vercel Postgres（Neon）
 
 1. 在 Vercel 项目面板中，进入 **Storage** 标签页
-2. 点击 **"Create Database"**，选择 **Postgres**
+2. 点击 **"Create Database"**，选择 **Neon**（推荐，标准 PostgreSQL 连接串，无需改代码）
 3. 创建完成后，Vercel 会自动注入 `POSTGRES_URL` 等环境变量
-4. 复制 Vercel Postgres 的连接字符串，格式类似：
+4. 复制 Neon 的连接字符串，格式类似：
    ```
    postgresql://user:password@host:port/dbname?sslmode=require
    ```
@@ -174,19 +174,21 @@ git push origin main
 
 ### 6. 运行数据库迁移
 
-在本地执行远程数据库迁移（需要设置本地 `DATABASE_URL` 指向 Vercel Postgres）：
+在本地执行远程数据库迁移（让 `DATABASE_URL` 指向 Neon 生产数据库）：
 
 ```bash
-# 临时设置环境变量指向 Vercel Postgres
-DATABASE_URL="postgresql://..." npx prisma migrate deploy
+# 方式 1：直接在命令前设置连接串（从 Vercel/Neon 控制台复制）
+DATABASE_URL="postgresql://user:pass@host/db?sslmode=require" npx prisma migrate deploy
 ```
-
-或者使用 Vercel CLI 在云端执行：
 
 ```bash
-npx vercel env pull .env.production   # 拉取生产环境变量
-DATABASE_URL=$(grep DATABASE_URL .env.production | cut -d= -f2-) npx prisma migrate deploy
+# 方式 2：先拉取生产环境变量，再从文件中读取（注意：Sensitive 变量需手动填充）
+npx vercel env pull .env.production --environment=production
+# 编辑 .env.production，手动填入 DATABASE_URL（Sensitive 变量不会自动拉取）
+source .env.production && npx prisma migrate deploy
 ```
+
+> **说明**：两种方式都是在本地机器上执行命令，Prisma 通过 `DATABASE_URL` 连接到远程 Neon 数据库并执行迁移。
 
 ### 7. 创建初始用户
 
