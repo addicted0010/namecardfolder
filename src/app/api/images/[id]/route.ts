@@ -1,0 +1,65 @@
+import { NextRequest } from "next/server";
+import { authenticate } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
+import { readFile } from "fs/promises";
+import { join } from "path";
+
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const auth = await authenticate();
+  if (!auth) {
+    return new Response("Unauthorized", { status: 401 });
+  }
+
+  const { id } = await params;
+
+  const image = await prisma.cardImage.findUnique({
+    where: { id },
+    include: { card: { select: { userId: true } } },
+  });
+
+  if (!image) {
+    return new Response("Not found", { status: 404 });
+  }
+
+  // Verify ownership: image must belong to user's card (or be an orphan uploaded by session)
+  if (image.card && image.card.userId !== auth.userId) {
+    return new Response("Forbidden", { status: 403 });
+  }
+
+  try {
+    let buffer: Buffer;
+    let contentType = image.mimeType || "image/jpeg";
+
+    if (image.storageUrl.startsWith("/uploads/")) {
+      // Local storage: read from filesystem
+      const filePath = join(process.cwd(), "public", image.storageUrl);
+      buffer = await readFile(filePath);
+    } else {
+      // Vercel Blob (private): fetch with auth token
+      const res = await fetch(image.storageUrl, {
+        headers: {
+          authorization: `Bearer ${process.env.BLOB_READ_WRITE_TOKEN}`,
+        },
+      });
+
+      if (!res.ok) {
+        return new Response("Storage error", { status: 502 });
+      }
+
+      buffer = Buffer.from(await res.arrayBuffer());
+      contentType = res.headers.get("content-type") || contentType;
+    }
+
+    return new Response(new Uint8Array(buffer), {
+      headers: {
+        "Content-Type": contentType,
+        "Cache-Control": "private, max-age=3600",
+      },
+    });
+  } catch {
+    return new Response("Internal error", { status: 500 });
+  }
+}

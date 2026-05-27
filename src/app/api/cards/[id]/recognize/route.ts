@@ -49,8 +49,12 @@ export async function POST(
           const buffer = await readFile(filePath);
           base64 = buffer.toString("base64");
         } else {
-          // Remote URL (Vercel Blob)
-          const res = await fetch(img.storageUrl);
+          // Remote URL (Vercel Blob - private)
+          const res = await fetch(img.storageUrl, {
+            headers: {
+              authorization: `Bearer ${process.env.BLOB_READ_WRITE_TOKEN}`,
+            },
+          });
           const buffer = Buffer.from(await res.arrayBuffer());
           base64 = buffer.toString("base64");
         }

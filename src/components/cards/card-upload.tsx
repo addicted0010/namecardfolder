@@ -53,7 +53,7 @@ export function CardUpload({ onUploadComplete, onClose }: CardUploadProps) {
       throw new Error(data?.error?.message || "Upload failed");
     }
 
-    return { id: data.id, url: data.url, side };
+    return { id: data.id, url: `/api/images/${data.id}`, side };
   }
 
   // Delete an orphan image from the server

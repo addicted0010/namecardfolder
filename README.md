@@ -27,7 +27,7 @@
 | 认证 | JWT（jose）+ HttpOnly Cookie |
 | 国际化 | next-intl（zh / en / ja） |
 | LLM | Anthropic Claude 或阿里云百炼（qwen），OpenAI 兼容接口 |
-| 文件存储 | 本地磁盘（开发）/ Vercel Blob（生产） |
+| 文件存储 | 本地磁盘（开发）/ Vercel Blob 私有模式（生产），通过 API 代理鉴权访问 |
 
 ---
 
@@ -81,6 +81,7 @@ src/
 │   └── api/
 │       ├── auth/          # 登录 / 注册 / 登出 / 当前用户
 │       ├── cards/         # 名片 CRUD & AI 识别
+│       ├── images/        # 图片代理（私有 Blob 鉴权访问）
 │       ├── upload/        # 文件上传
 │       └── llm-logs/      # LLM 日志查询
 ├── components/
@@ -111,7 +112,7 @@ prisma/                    # Schema & 数据库迁移
 | `ALIBABA_API_KEY` | 阿里云百炼 API Key |
 | `ALIBABA_MODEL` | 如 `qwen3.7-max` |
 | `STORAGE_PROVIDER` | `local`（开发）/ `vercel`（生产） |
-| `BLOB_READ_WRITE_TOKEN` | Vercel Blob Token（生产环境） |
+| `BLOB_READ_WRITE_TOKEN` | Vercel Blob Token（生产环境，私有模式鉴权用） |
 
 详细说明及可选配置参见 [DEPLOY.md](./DEPLOY.md)。
 

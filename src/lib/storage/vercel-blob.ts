@@ -11,7 +11,7 @@ export class VercelBlobProvider implements StorageProvider {
     const key = `cards/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
 
     const blob = await put(key, file, {
-      access: "public",
+      access: "private",
       contentType: mimeType,
     });
 
@@ -27,5 +27,14 @@ export class VercelBlobProvider implements StorageProvider {
 
   getUrl(storageKey: string): string {
     return storageKey;
+  }
+
+  /** Fetch image content from private blob store (server-side only) */
+  async fetch(blobUrl: string): Promise<Response> {
+    return fetch(blobUrl, {
+      headers: {
+        authorization: `Bearer ${process.env.BLOB_READ_WRITE_TOKEN}`,
+      },
+    });
   }
 }

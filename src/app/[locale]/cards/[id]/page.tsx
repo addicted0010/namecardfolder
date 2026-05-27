@@ -250,7 +250,7 @@ export default function CardDetailPage() {
                 <span className="text-xs font-medium text-gray-700">{t("front")}</span>
               </div>
               <img
-                src={frontImage.storageUrl}
+                src={`/api/images/${frontImage.id}`}
                 alt="Front"
                 className="w-full"
               />
@@ -262,7 +262,7 @@ export default function CardDetailPage() {
                 <span className="text-xs font-medium text-gray-700">{t("back")}</span>
               </div>
               <img
-                src={backImage.storageUrl}
+                src={`/api/images/${backImage.id}`}
                 alt="Back"
                 className="w-full"
               />

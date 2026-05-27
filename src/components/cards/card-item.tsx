@@ -40,7 +40,7 @@ export function CardItem({
     <div className="aspect-[3/2] bg-gray-100 relative overflow-hidden">
       {frontImage ? (
         <img
-          src={frontImage.storageUrl}
+          src={`/api/images/${frontImage.id}`}
           alt={card.fullName || "Business card"}
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
         />

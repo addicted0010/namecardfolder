@@ -150,6 +150,9 @@ git push origin main
 
 1. 在 **Storage** 标签页中，点击 **"Create Database"**，选择 **Blob**
 2. 创建完成后，Vercel 会自动注入 `BLOB_READ_WRITE_TOKEN` 环境变量
+3. 确保 Blob Store 配置为 **Private** 访问模式（默认即是）
+
+> **说明**：本项目使用私有访问模式，图片通过后端 API 代理（`/api/images/[id]`）校验用户登录状态和资源归属后返回，确保仅登录用户可访问自己的名片图片。
 
 ### 5. 配置环境变量
 
@@ -251,6 +254,8 @@ DATABASE_URL="postgresql://..." SEED_USERNAME=admin SEED_PASSWORD=你的密码 n
 |------|------|--------|
 | `STORAGE_PROVIDER` | 文件存储方式 | `local`（开发）/ `vercel`（生产） |
 | `BLOB_READ_WRITE_TOKEN` | Vercel Blob Token（生产环境） | Vercel 自动注入 |
+
+> **私有访问模式说明**：生产环境的 Blob Store 配置为 private 模式。前端不直接访问 Blob URL，而是通过 `/api/images/[id]` 代理 API 获取图片。该代理会校验用户登录状态和图片归属权，确保仅登录用户可查看自己的名片图片。`BLOB_READ_WRITE_TOKEN` 用于后端服务访问私有 Blob 存储。
 
 ### 应用
 
