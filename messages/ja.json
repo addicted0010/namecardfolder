@@ -37,7 +37,14 @@
     "passwordMismatch": "パスワードが一致しません",
     "usernameRequired": "ユーザー名を入力してください",
     "passwordRequired": "パスワードを入力してください",
-    "passwordMinLength": "パスワードは6文字以上で入力してください"
+    "passwordMinLength": "パスワードは6文字以上で入力してください",
+    "changePassword": "パスワード変更",
+    "currentPassword": "現在のパスワード",
+    "newPassword": "新しいパスワード",
+    "confirmNewPassword": "新しいパスワード（確認）",
+    "changePasswordSuccess": "パスワードを変更しました。再ログインしてください",
+    "currentPasswordWrong": "現在のパスワードが正しくありません",
+    "newPasswordSameAsOld": "新しいパスワードは現在のパスワードと異なるものを入力してください"
   },
   "cards": {
     "title": "名刺管理",

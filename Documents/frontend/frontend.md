@@ -167,8 +167,17 @@ idle → processing → front-done → processing-back → both-done
 顶部导航栏：
 - 左侧：CardVault Logo + 版本号
 - 右侧：语言切换器 + 用户菜单
-- 用户菜单：显示名称 + 登出按钮
+- 用户菜单：显示名称 + 修改密码按钮 + 登出按钮
 - 未登录时：显示登录按钮
+
+### ChangePasswordModal
+
+修改密码弹窗组件（`src/components/auth/change-password-modal.tsx`）：
+- 三个密码输入框：当前密码 / 新密码 / 确认新密码
+- 每个输入框支持显示/隐藏密码切换
+- 前端验证：必填、最小长度、两次输入一致
+- 调用 `POST /api/auth/change-password`
+- 成功后强制重新登录（清除认证状态 + 跳转登录页）
 
 ### LocaleSwitcher
 

@@ -14,6 +14,7 @@ API 层使用 Next.js App Router 的 Route Handlers，所有 API 路由均在 `/
 | POST | `/api/auth/login` | 用户登录 | 否 |
 | POST | `/api/auth/logout` | 用户登出 | 是 |
 | GET | `/api/auth/me` | 获取当前用户 | 是 |
+| POST | `/api/auth/change-password` | 修改密码 | 是 |
 | GET | `/api/cards` | 名片列表（分页+搜索） | 是 |
 | POST | `/api/cards` | 创建名片 | 是 |
 | GET | `/api/cards/[id]` | 获取名片详情 | 是 |
@@ -63,6 +64,8 @@ API 层使用 Next.js App Router 的 Route Handlers，所有 API 路由均在 `/
 - `NOT_A_BUSINESS_CARD` — 非名片图片（422）
 - `PROCESSING_FAILED` — LLM 处理失败（502）
 - `INTERNAL_ERROR` — 服务器内部错误（500）
+- `CURRENT_PASSWORD_WRONG` — 当前密码错误（401）
+- `SAME_PASSWORD` — 新密码与当前密码相同（400）
 
 ## 详细接口文档
 

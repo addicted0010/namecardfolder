@@ -120,6 +120,7 @@ useAuth()      // Hook: { user, loading, login, logout }
 | `/api/auth/login` | POST | 登录 |
 | `/api/auth/logout` | POST | 登出（清除 Cookie） |
 | `/api/auth/me` | GET | 获取当前用户信息 |
+| `/api/auth/change-password` | POST | 修改密码 |
 
 ### 注册流程
 
@@ -138,3 +139,14 @@ useAuth()      // Hook: { user, loading, login, logout }
 3. bcrypt 比对密码
 4. 签发 JWT + 设置 Cookie
 5. 返回用户信息
+
+### 修改密码流程
+
+1. 验证当前用户已认证（`authenticateOrThrow`）
+2. 验证必填字段（currentPassword, newPassword）
+3. 新密码长度 ≥ 6
+4. bcrypt 比对当前密码是否正确
+5. 检查新密码不能与当前密码相同
+6. bcrypt 加密新密码并更新数据库
+7. 清除 Cookie（强制重新登录）
+8. 前端跳转到登录页

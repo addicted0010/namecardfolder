@@ -37,7 +37,14 @@
     "passwordMismatch": "Passwords do not match",
     "usernameRequired": "Username is required",
     "passwordRequired": "Password is required",
-    "passwordMinLength": "Password must be at least 6 characters"
+    "passwordMinLength": "Password must be at least 6 characters",
+    "changePassword": "Change Password",
+    "currentPassword": "Current Password",
+    "newPassword": "New Password",
+    "confirmNewPassword": "Confirm New Password",
+    "changePasswordSuccess": "Password changed, please log in again",
+    "currentPasswordWrong": "Current password is incorrect",
+    "newPasswordSameAsOld": "New password cannot be the same as current password"
   },
   "cards": {
     "title": "Business Cards",

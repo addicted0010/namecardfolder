@@ -5,14 +5,16 @@ import { Link } from "@/i18n/navigation";
 import { useAuth } from "@/contexts/auth-context";
 import { LocaleSwitcher } from "./locale-switcher";
 import { useState, useRef, useEffect } from "react";
-import { LogOut, User, CreditCard } from "lucide-react";
+import { LogOut, User, CreditCard, KeyRound } from "lucide-react";
 import { useRouter } from "@/i18n/navigation";
+import { ChangePasswordModal } from "@/components/auth/change-password-modal";
 
 export function Header() {
   const t = useTranslations("auth");
   const { user, loading, logout } = useAuth();
   const router = useRouter();
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [changePasswordOpen, setChangePasswordOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -29,6 +31,12 @@ export function Header() {
     await fetch("/api/auth/logout", { method: "POST" });
     logout();
     setUserMenuOpen(false);
+    router.push("/login");
+  }
+
+  function handleChangePasswordSuccess() {
+    setChangePasswordOpen(false);
+    logout();
     router.push("/login");
   }
 
@@ -69,6 +77,16 @@ export function Header() {
                       <p className="text-xs text-gray-500 truncate">{user.username}</p>
                     </div>
                     <button
+                      onClick={() => {
+                        setUserMenuOpen(false);
+                        setChangePasswordOpen(true);
+                      }}
+                      className="w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                    >
+                      <KeyRound className="w-4 h-4" />
+                      {t("changePassword")}
+                    </button>
+                    <button
                       onClick={handleLogout}
                       className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
                     >
@@ -94,6 +112,13 @@ export function Header() {
         </div>
 
       </div>
+
+      {/* Change Password Modal */}
+      <ChangePasswordModal
+        open={changePasswordOpen}
+        onClose={() => setChangePasswordOpen(false)}
+        onSuccess={handleChangePasswordSuccess}
+      />
     </header>
   );
 }
