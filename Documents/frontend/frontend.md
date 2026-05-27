@@ -21,7 +21,6 @@ graph TB
     Content --> CardsPage[名片列表 /cards]
     Content --> CardDetail[名片详情 /cards/id]
     Content --> LoginPage[登录 /login]
-    Content --> RegisterPage[注册 /register]
 ```
 
 ## 布局层级

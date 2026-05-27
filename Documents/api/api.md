@@ -10,7 +10,7 @@ API 层使用 Next.js App Router 的 Route Handlers，所有 API 路由均在 `/
 
 | 方法 | 路径 | 说明 | 认证 |
 |------|------|------|------|
-| POST | `/api/auth/register` | 用户注册 | 否 |
+| POST | `/api/auth/register` | ~~用户注册~~（已禁用，返回 403） | 否 |
 | POST | `/api/auth/login` | 用户登录 | 否 |
 | POST | `/api/auth/logout` | 用户登出 | 是 |
 | GET | `/api/auth/me` | 获取当前用户 | 是 |

@@ -54,7 +54,7 @@ src/
 │   │   │   ├── [id]/page.tsx  # 名片详情/编辑页
 │   │   │   └── page.tsx       # 名片列表页
 │   │   ├── login/page.tsx     # 登录页
-│   │   ├── register/page.tsx  # 注册页
+│   │   ├── register/page.tsx  # 注册页（已禁用，重定向到登录）
 │   │   ├── layout.tsx         # 局部布局
 │   │   └── page.tsx           # 首页（重定向到 cards）
 │   ├── api/                   # API 路由
@@ -87,7 +87,7 @@ src/
 | 模块 | 文档 | 职责 |
 |------|------|------|
 | 数据库 | [database.md](./database/database.md) | 数据模型、关系、索引 |
-| 认证 | [auth.md](./auth/auth.md) | 用户注册/登录、JWT、中间件保护 |
+| 认证 | [auth.md](./auth/auth.md) | 用户登录、JWT、中间件保护（注册已禁用） |
 | 存储 | [storage.md](./storage/storage.md) | 文件上传/删除、私有访问代理 |
 | LLM | [llm.md](./llm/llm.md) | AI 名片识别、卡片检测 |
 | API | [api.md](./api/api.md) | RESTful API 路由设计 |

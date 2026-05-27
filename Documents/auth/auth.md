@@ -78,7 +78,7 @@ getCurrentUser()         // 查询完整用户信息
 
 ```
 /api/auth/login    → 公开（无需认证）
-/api/auth/register → 公开
+/api/auth/register → 公开（已禁用，返回 403）
 /api/*             → 需要有效 JWT，否则返回 401 JSON
 ```
 
@@ -86,7 +86,7 @@ getCurrentUser()         // 查询完整用户信息
 
 ```
 /{locale}/login    → 公开
-/{locale}/register → 公开
+/{locale}/register → 重定向到登录页（注册已禁用）
 /{locale}/*        → 需要有效 JWT，否则重定向到登录页
 ```
 
@@ -116,21 +116,15 @@ useAuth()      // Hook: { user, loading, login, logout }
 
 | 端点 | 方法 | 说明 |
 |------|------|------|
-| `/api/auth/register` | POST | 注册（username + password） |
+| `/api/auth/register` | POST | ~~注册~~（已禁用，返回 403） |
 | `/api/auth/login` | POST | 登录 |
 | `/api/auth/logout` | POST | 登出（清除 Cookie） |
 | `/api/auth/me` | GET | 获取当前用户信息 |
 | `/api/auth/change-password` | POST | 修改密码 |
 
-### 注册流程
+### 注册流程（已禁用）
 
-1. 验证必填字段（username, password）
-2. 密码长度 ≥ 6
-3. 检查用户名唯一性
-4. bcrypt 加密密码
-5. 创建用户记录
-6. 签发 JWT + 设置 Cookie
-7. 返回用户信息
+当前注册功能已关闭，API 端点直接返回 `403 REGISTRATION_DISABLED`，注册页面重定向到登录页。用户只能通过管理员手动创建（seed 或直接操作数据库）。
 
 ### 登录流程
 

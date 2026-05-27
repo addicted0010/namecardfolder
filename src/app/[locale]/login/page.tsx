@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useTranslations } from "next-intl";
-import { Link, useRouter } from "@/i18n/navigation";
+import { useRouter } from "@/i18n/navigation";
 import { useAuth } from "@/contexts/auth-context";
 import { toast } from "sonner";
 import { CreditCard, Loader2 } from "lucide-react";
@@ -95,12 +95,7 @@ export default function LoginPage() {
           </button>
         </form>
 
-        <p className="text-center text-sm text-gray-500 mt-4">
-          {t("noAccount")}{" "}
-          <Link href="/register" className="text-blue-600 hover:text-blue-700 font-medium">
-            {t("register")}
-          </Link>
-        </p>
+
       </div>
     </div>
   );
