@@ -117,7 +117,7 @@ export async function DELETE(
     // Delete images from storage
     const storage = getStorageProvider();
     await Promise.all(
-      card.images.map((img) => storage.delete(img.storageKey).catch(() => {}))
+      card.images.map((img: { storageKey: string }) => storage.delete(img.storageKey).catch(() => {}))
     );
 
     // Delete card (cascade deletes images and logs in DB)
