@@ -146,7 +146,7 @@ fullName、nameReading、company、title、email、phone、mobilePhone、address
 
 ### POST /api/upload
 
-上传名片图片，含预处理和卡片检测。
+上传名片图片（仅基本格式转换，不调用 LLM）。
 
 **请求格式：** `multipart/form-data`
 | 字段 | 类型 | 说明 |
@@ -160,11 +160,12 @@ fullName、nameReading、company、title、email、phone、mobilePhone、address
 
 **处理流程：**
 1. 文件类型/大小验证
-2. Sharp 预处理（旋转、缩放、转 JPEG）
+2. Sharp 预处理（旋转、缩放至 ≤2048px、转 JPEG@85）
 3. 上传到存储
-4. LLM 卡片检测 + 裁剪
-5. 替换存储文件为裁剪后版本
-6. 返回 CardImage 信息
+4. 创建 CardImage 记录
+5. 返回 CardImage 信息
+
+注：LLM 卡片检测和智能裁剪已移至后台识别队列中异步执行，上传阶段不再阻塞。
 
 详见 [存储模块文档](../storage/storage.md)。
 

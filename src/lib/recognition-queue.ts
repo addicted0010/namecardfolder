@@ -1,10 +1,29 @@
 import { prisma } from "@/lib/prisma";
 import { getLLMProvider } from "@/lib/llm";
+import { processCardImage } from "@/lib/image-processing";
 import { readFile } from "fs/promises";
 import { join } from "path";
 
 /**
+ * Fetch image buffer from storage URL.
+ */
+async function fetchImageBuffer(storageUrl: string): Promise<Buffer> {
+  if (storageUrl.startsWith("/uploads/")) {
+    const filePath = join(process.cwd(), "public", storageUrl);
+    return await readFile(filePath);
+  } else {
+    const res = await fetch(storageUrl, {
+      headers: {
+        authorization: `Bearer ${process.env.BLOB_READ_WRITE_TOKEN}`,
+      },
+    });
+    return Buffer.from(await res.arrayBuffer());
+  }
+}
+
+/**
  * Recognize a single card by ID.
+ * Flow: image processing (detect + crop) → OCR recognition.
  * Shared logic used by both the queue processor and the manual recognize API endpoint.
  *
  * Returns "SUCCESS" | "FAILED" | "RATE_LIMITED"
@@ -30,39 +49,91 @@ export async function recognizeCard(cardId: string): Promise<"SUCCESS" | "FAILED
   });
 
   try {
-    // Prepare images for LLM
-    const images = await Promise.all(
-      card.images.map(async (img: { storageUrl: string; mimeType: string; side: string }) => {
-        let base64: string;
+    // Phase 1: Image processing (detect card region + crop + compress)
+    const processedImages: Array<{
+      base64: string;
+      mimeType: string;
+      side: "FRONT" | "BACK";
+      url: string;
+    }> = [];
 
-        if (img.storageUrl.startsWith("/uploads/")) {
-          const filePath = join(process.cwd(), "public", img.storageUrl);
-          const buffer = await readFile(filePath);
-          base64 = buffer.toString("base64");
-        } else {
-          const res = await fetch(img.storageUrl, {
-            headers: {
-              authorization: `Bearer ${process.env.BLOB_READ_WRITE_TOKEN}`,
-            },
+    for (const img of card.images) {
+      const imgTyped = img as { id: string; storageKey: string; storageUrl: string; mimeType: string; side: string };
+      const buffer = await fetchImageBuffer(imgTyped.storageUrl);
+
+      try {
+        const processed = await processCardImage(
+          buffer,
+          imgTyped.storageKey,
+          imgTyped.storageUrl,
+          imgTyped.mimeType,
+          "card.jpg"
+        );
+
+        // Update CardImage with processed file info
+        await prisma.cardImage.update({
+          where: { id: imgTyped.id },
+          data: {
+            storageKey: processed.storageKey,
+            storageUrl: processed.url,
+            sizeBytes: processed.sizeBytes,
+          },
+        });
+
+        // Save LLM detection log
+        await prisma.llmLog.create({
+          data: {
+            userId: card.userId,
+            cardId,
+            provider: processed.log.provider,
+            model: processed.log.model,
+            requestHeaders: processed.log.requestHeaders as never,
+            requestBody: processed.log.requestBody as never,
+            responseBody: processed.log.responseBody as never,
+            responseStatus: processed.log.responseStatus,
+            durationMs: processed.log.durationMs,
+            errorMessage: processed.log.errorMessage,
+          },
+        });
+
+        // Check for rate limiting from detectCard
+        if (processed.log.responseStatus === 429) {
+          await prisma.card.update({
+            where: { id: cardId },
+            data: { recognitionStatus: "PENDING" },
           });
-          const buffer = Buffer.from(await res.arrayBuffer());
-          base64 = buffer.toString("base64");
+          return "RATE_LIMITED";
         }
 
-        return {
-          url: img.storageUrl,
-          base64,
-          mimeType: img.mimeType,
-          side: img.side as "FRONT" | "BACK",
-        };
-      })
-    );
+        // Use the processed buffer directly for OCR (avoid re-fetching)
+        processedImages.push({
+          base64: processed.buffer.toString("base64"),
+          mimeType: "image/jpeg",
+          side: imgTyped.side as "FRONT" | "BACK",
+          url: processed.url,
+        });
+      } catch (error) {
+        // If not a business card, mark as FAILED
+        if (error instanceof Error && "code" in error) {
+          const apiErr = error as { code?: string };
+          if (apiErr.code === "NOT_A_BUSINESS_CARD") {
+            await prisma.card.update({
+              where: { id: cardId },
+              data: { recognitionStatus: "FAILED" },
+            });
+            return "FAILED";
+          }
+        }
+        // For other processing errors, also mark FAILED
+        throw error;
+      }
+    }
 
-    // Call LLM
+    // Phase 2: OCR recognition using processed images
     const llm = getLLMProvider();
-    const { result, log } = await llm.recognizeCard(images);
+    const { result, log } = await llm.recognizeCard(processedImages);
 
-    // Save log
+    // Save OCR log
     await prisma.llmLog.create({
       data: {
         userId: card.userId,
@@ -80,7 +151,6 @@ export async function recognizeCard(cardId: string): Promise<"SUCCESS" | "FAILED
 
     // Check for rate limiting (429)
     if (log.responseStatus === 429) {
-      // Revert to PENDING for retry
       await prisma.card.update({
         where: { id: cardId },
         data: { recognitionStatus: "PENDING" },

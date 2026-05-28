@@ -14,7 +14,7 @@ export async function processCardImage(
   oldStorageUrl: string,
   mimeType: string,
   filename: string
-): Promise<{ storageKey: string; url: string; sizeBytes: number; log: LLMLogEntry }> {
+): Promise<{ storageKey: string; url: string; sizeBytes: number; log: LLMLogEntry; buffer: Buffer }> {
   // Step 1: Create preview buffer for LLM (rotated + resized)
   const previewBuffer = await sharp(rawBuffer)
     .rotate() // auto-orient from EXIF
@@ -104,5 +104,6 @@ export async function processCardImage(
     url,
     sizeBytes: compressedBuffer.length,
     log,
+    buffer: compressedBuffer,
   };
 }

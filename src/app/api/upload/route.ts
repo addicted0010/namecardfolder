@@ -3,7 +3,6 @@ import { authenticate } from "@/lib/auth";
 import { getStorageProvider } from "@/lib/storage";
 import { prisma } from "@/lib/prisma";
 import { apiResponse, apiError, ApiError } from "@/lib/utils";
-import { processCardImage } from "@/lib/image-processing";
 import sharp from "sharp";
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
@@ -56,71 +55,29 @@ export async function POST(request: NextRequest) {
     const mimeType = "image/jpeg";
     const filename = file.name.replace(/\.[^.]+$/, ".jpg");
 
-    // Store initial file
+    // Store file
     const storage = getStorageProvider();
-    const { storageKey: initialKey, url: initialUrl } = await storage.upload(processedBuffer, filename, mimeType);
+    const { storageKey, url } = await storage.upload(processedBuffer, filename, mimeType);
 
-    // Save initial record to database
+    // Save record to database
     const cardImage = await prisma.cardImage.create({
       data: {
         side: side === "BACK" ? "BACK" : "FRONT",
-        storageKey: initialKey,
-        storageUrl: initialUrl,
+        storageKey,
+        storageUrl: url,
         mimeType,
         sizeBytes: processedBuffer.length,
       },
     });
 
-    // Run LLM-based image processing (detect card + crop)
-    try {
-      const processed = await processCardImage(
-        processedBuffer,
-        initialKey,
-        initialUrl,
-        mimeType,
-        filename
-      );
-
-      // Update DB with processed image info
-      await prisma.cardImage.update({
-        where: { id: cardImage.id },
-        data: {
-          storageKey: processed.storageKey,
-          storageUrl: processed.url,
-          sizeBytes: processed.sizeBytes,
-        },
-      });
-
-      // Save LLM detection log
-      await prisma.llmLog.create({
-        data: {
-          userId: auth.userId,
-          cardId: null,
-          provider: processed.log.provider,
-          model: processed.log.model,
-          requestHeaders: processed.log.requestHeaders as never,
-          requestBody: processed.log.requestBody as never,
-          responseBody: processed.log.responseBody as never,
-          responseStatus: processed.log.responseStatus,
-          durationMs: processed.log.durationMs,
-          errorMessage: processed.log.errorMessage,
-        },
-      });
-
-      return apiResponse({
-        id: cardImage.id,
-        url: processed.url,
-        storageKey: processed.storageKey,
-        mimeType,
-        sizeBytes: processed.sizeBytes,
-        side: cardImage.side,
-      });
-    } catch (processError) {
-      // Clean up: delete initial file and DB record on processing failure
-      await storage.delete(initialKey).catch(() => {});
-      await prisma.cardImage.delete({ where: { id: cardImage.id } }).catch(() => {});
-      throw processError;
-    }
+    return apiResponse({
+      id: cardImage.id,
+      url,
+      storageKey,
+      mimeType,
+      sizeBytes: processedBuffer.length,
+      side: cardImage.side,
+    });
   } catch (error) {
     return apiError(error);
   }

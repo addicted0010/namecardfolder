@@ -161,6 +161,10 @@ interface LLMLogEntry {
 
 核心识别逻辑从 route handler 抽取为共享函数，被队列处理和手动识别 API 共同调用。
 
+处理流程分为两个阶段：
+1. **Phase 1 - 图片处理**：对每张图片调用 `processCardImage`（LLM 检测名片区域 + 裁剪 + 压缩）。如果图片不是名片，标记为 FAILED。
+2. **Phase 2 - OCR 识别**：使用裁剪后的图片调用 LLM `recognizeCard` 提取结构化字段。
+
 ## 识别 API 流程 (/api/cards/[id]/recognize)
 
 ```mermaid

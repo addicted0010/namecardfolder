@@ -47,10 +47,7 @@ export function CardUpload({ onUploadComplete, onClose }: CardUploadProps) {
 
     if (!res.ok) {
       const code = data?.error?.code;
-      if (code === "NOT_A_BUSINESS_CARD") {
-        throw new Error("NOT_A_BUSINESS_CARD");
-      }
-      throw new Error(data?.error?.message || "Upload failed");
+      throw new Error(data?.error?.message || `Upload failed (${code})`);
     }
 
     return { id: data.id, url: `/api/images/${data.id}`, side };
@@ -77,11 +74,7 @@ export function CardUpload({ onUploadComplete, onClose }: CardUploadProps) {
       }
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Upload failed";
-      if (msg === "NOT_A_BUSINESS_CARD") {
-        setError(t("notABusinessCard"));
-      } else {
-        setError(msg);
-      }
+      setError(msg);
       // Return to appropriate phase
       if (side === "BACK" && frontImage) {
         setPhase("front-done");
