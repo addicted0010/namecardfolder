@@ -76,8 +76,9 @@ src/
 │   ├── llm/                   # LLM 调用封装
 │   ├── storage/               # 存储抽象层
 │   ├── auth.ts                # 认证工具
-│   ├── image-processing.ts    # 图片处理
+│   ├── image-processing.ts    # 图片处理（含压缩优化）
 │   ├── prisma.ts              # Prisma 客户端
+│   ├── recognition-queue.ts   # 识别队列调度
 │   └── utils.ts               # 通用工具
 └── middleware.ts              # 中间件（认证 + 国际化）
 ```
@@ -89,7 +90,7 @@ src/
 | 数据库 | [database.md](./database/database.md) | 数据模型、关系、索引 |
 | 认证 | [auth.md](./auth/auth.md) | 用户登录、JWT、中间件保护（注册已禁用） |
 | 存储 | [storage.md](./storage/storage.md) | 文件上传/删除、私有访问代理 |
-| LLM | [llm.md](./llm/llm.md) | AI 名片识别、卡片检测 |
+| LLM | [llm.md](./llm/llm.md) | AI 名片识别、卡片检测、后台识别队列 |
 | API | [api.md](./api/api.md) | RESTful API 路由设计 |
 | 前端 | [frontend.md](./frontend/frontend.md) | 页面组件、交互逻辑 |
 
@@ -102,13 +103,14 @@ graph LR
     A[用户选择图片] --> B[上传 /api/upload]
     B --> C[图片预处理 Sharp]
     C --> D[LLM 卡片检测]
-    D -->|是名片| E[裁剪+存储]
+    D -->|是名片| E[裁剪+压缩+存储]
     D -->|非名片| F[拒绝上传]
     E --> G[创建 Card /api/cards POST]
-    G --> H[跳转详情页]
-    H --> I[自动触发 /api/cards/id/recognize]
-    I --> J[LLM 文字识别]
-    J --> K[更新 Card 字段]
+    G --> H[返回前端 刷新列表]
+    G --> I[after 触发识别队列]
+    I --> J[processRecognitionQueue]
+    J --> K[LLM 文字识别]
+    K --> L[更新 Card 字段 + 状态]
 ```
 
 ### 图片访问流程（私有模式）

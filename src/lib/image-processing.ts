@@ -88,15 +88,21 @@ export async function processCardImage(
     .jpeg({ quality: 85 })
     .toBuffer();
 
+  // Step 8.5: Compress cropped image for faster upload and recognition
+  const compressedBuffer = await sharp(croppedBuffer)
+    .resize(1000, 1000, { fit: "inside", withoutEnlargement: true })
+    .jpeg({ quality: 72 })
+    .toBuffer();
+
   // Step 9: Replace in storage (delete old + upload new)
   const storage = getStorageProvider();
   await storage.delete(oldStorageKey);
-  const { storageKey, url } = await storage.upload(croppedBuffer, filename, "image/jpeg");
+  const { storageKey, url } = await storage.upload(compressedBuffer, filename, "image/jpeg");
 
   return {
     storageKey,
     url,
-    sizeBytes: croppedBuffer.length,
+    sizeBytes: compressedBuffer.length,
     log,
   };
 }

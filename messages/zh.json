@@ -83,10 +83,10 @@
     "createdAt": "创建时间",
     "updatedAt": "更新时间",
     "status": "状态",
-    "statusPending": "待处理",
-    "statusProcessing": "处理中",
-    "statusSuccess": "成功",
-    "statusFailed": "失败",
+    "statusPending": "未识别",
+    "statusProcessing": "识别中",
+    "statusSuccess": "已识别",
+    "statusFailed": "识别失败",
     "front": "正面",
     "back": "反面",
     "uploadFront": "上传正面",
@@ -97,7 +97,8 @@
     "notABusinessCard": "这似乎不是一张名片，请重新上传",
     "uploadOtherSide": "上传另一面（可选）",
     "processingFailed": "图片处理失败",
-    "tryAgain": "重试"
+    "tryAgain": "重试",
+    "uploadSuccess": "名片已上传，正在后台识别"
   },
   "debug": {
     "viewLogs": "LLM 日志",

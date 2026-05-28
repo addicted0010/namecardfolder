@@ -1,7 +1,8 @@
-import { NextRequest } from "next/server";
+import { NextRequest, after } from "next/server";
 import { authenticate } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { apiResponse, apiError, ApiError, paginate } from "@/lib/utils";
+import { processRecognitionQueue } from "@/lib/recognition-queue";
 
 export async function GET(request: NextRequest) {
   try {
@@ -88,6 +89,11 @@ export async function POST(request: NextRequest) {
     const updatedCard = await prisma.card.findUnique({
       where: { id: card.id },
       include: { images: true },
+    });
+
+    // Trigger background recognition after response is sent
+    after(async () => {
+      await processRecognitionQueue();
     });
 
     return apiResponse(updatedCard, 201);

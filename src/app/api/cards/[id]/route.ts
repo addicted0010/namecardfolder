@@ -1,4 +1,4 @@
-import { NextRequest } from "next/server";
+import { NextRequest, after } from "next/server";
 import { authenticate } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getStorageProvider } from "@/lib/storage";
@@ -29,6 +29,16 @@ export async function GET(
 
     if (!card) {
       throw new ApiError(404, "NOT_FOUND", "Card not found");
+    }
+
+    // Mark as viewed after response is sent (if not already viewed)
+    if (!card.viewedAt) {
+      after(async () => {
+        await prisma.card.update({
+          where: { id },
+          data: { viewedAt: new Date() },
+        });
+      });
     }
 
     return apiResponse(card);

@@ -79,6 +79,7 @@ getCurrentUser()         // 查询完整用户信息
 ```
 /api/auth/login    → 公开（无需认证）
 /api/auth/register → 公开（已禁用，返回 403）
+/api/cron/*        → 公开（通过 CRON_SECRET 自行验证）
 /api/*             → 需要有效 JWT，否则返回 401 JSON
 ```
 

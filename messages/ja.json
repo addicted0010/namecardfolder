@@ -83,10 +83,10 @@
     "createdAt": "作成日",
     "updatedAt": "更新日",
     "status": "ステータス",
-    "statusPending": "未処理",
-    "statusProcessing": "処理中",
-    "statusSuccess": "成功",
-    "statusFailed": "失敗",
+    "statusPending": "未認識",
+    "statusProcessing": "認識中",
+    "statusSuccess": "認識済み",
+    "statusFailed": "認識失敗",
     "front": "表面",
     "back": "裏面",
     "uploadFront": "表面をアップロード",
@@ -97,7 +97,8 @@
     "notABusinessCard": "名刺ではないようです。再アップロードしてください",
     "uploadOtherSide": "裏面をアップロード（任意）",
     "processingFailed": "画像処理に失敗しました",
-    "tryAgain": "やり直す"
+    "tryAgain": "やり直す",
+    "uploadSuccess": "名刺をアップロードしました。バックグラウンドで認識中"
   },
   "debug": {
     "viewLogs": "LLM ログ",

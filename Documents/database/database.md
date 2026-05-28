@@ -14,6 +14,7 @@ graph TB
     User -->|1:N| LlmLog[LlmLog 调用日志]
     Card -->|1:N| CardImage[CardImage 名片图片]
     Card -->|1:N| LlmLog
+    SystemConfig[SystemConfig 系统配置]
 ```
 
 ## 数据模型
@@ -52,6 +53,7 @@ graph TB
 | notes | String? | 备注 |
 | rawText | String? | OCR 原始文本 |
 | recognitionStatus | RecognitionStatus | 识别状态（枚举） |
+| viewedAt | DateTime? | 用户首次查看时间（null=未查看，用于 New 徽章） |
 | createdAt | DateTime | 创建时间 |
 | updatedAt | DateTime | 更新时间 |
 
@@ -103,6 +105,21 @@ graph TB
 关系：
 - `Card` → onDelete: SetNull（名片删除时日志保留，cardId 置空）
 
+### SystemConfig（系统配置）
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| id | String (cuid) | 主键 |
+| key | String | 配置键（唯一） |
+| value | String | 配置值 |
+| updatedAt | DateTime | 更新时间 |
+
+索引：`@unique([key])`
+
+**当前配置项**：
+- `recognition_max_concurrency`：识别队列最大并发数（默认 "5"）
+- `recognition_min_interval_ms`：识别请求最小间隔毫秒数（默认 "100"）
+
 ## 枚举类型
 
 ### RecognitionStatus
@@ -123,7 +140,8 @@ graph TB
 
 ## 数据生命周期
 
-1. **创建**：用户上传图片 → CardImage（cardId=null）→ 创建 Card → 关联 CardImage
-2. **识别**：调用 LLM → 写入 LlmLog → 更新 Card 字段
-3. **删除**：删除 Card → 级联删除 CardImage（数据库级）+ 删除存储文件（应用层）
-4. **用户删除**：级联删除所有 Card → 进而级联删除所有 CardImage 和 LlmLog
+1. **上传**：用户上传图片 → CardImage（cardId=null）→ 创建 Card → 关联 CardImage
+2. **识别**：后台队列自动触发 → 调用 LLM → 写入 LlmLog → 更新 Card 字段 → 状态变为 SUCCESS/FAILED
+3. **查看**：用户首次打开 Card 详情 → 更新 viewedAt（清除 New 标记）
+4. **删除**：删除 Card → 级联删除 CardImage（数据库级）+ 删除存储文件（应用层）
+5. **用户删除**：级联删除所有 Card → 进而级联删除所有 CardImage 和 LlmLog

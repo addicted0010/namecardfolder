@@ -16,7 +16,7 @@ API 层使用 Next.js App Router 的 Route Handlers，所有 API 路由均在 `/
 | GET | `/api/auth/me` | 获取当前用户 | 是 |
 | POST | `/api/auth/change-password` | 修改密码 | 是 |
 | GET | `/api/cards` | 名片列表（分页+搜索） | 是 |
-| POST | `/api/cards` | 创建名片 | 是 |
+| POST | `/api/cards` | 创建名片（自动触发后台识别） | 是 |
 | GET | `/api/cards/[id]` | 获取名片详情 | 是 |
 | PUT | `/api/cards/[id]` | 更新名片字段 | 是 |
 | DELETE | `/api/cards/[id]` | 删除名片 | 是 |
@@ -26,6 +26,7 @@ API 层使用 Next.js App Router 的 Route Handlers，所有 API 路由均在 `/
 | GET | `/api/images/[id]` | 获取图片内容（代理） | 是 |
 | GET | `/api/llm-logs` | LLM 日志列表 | 是 |
 | GET | `/api/llm-logs/[id]` | LLM 日志详情 | 是 |
+| GET | `/api/cron/recognize` | Cron 触发识别队列处理 | CRON_SECRET |
 
 ## 通用响应格式
 
@@ -117,6 +118,7 @@ fullName、nameReading、company、title、email、phone、address、department�
 1. 创建 Card 记录（状态 PENDING）
 2. 将 CardImage 的 `cardId` 从 null 更新为新 Card ID
 3. 返回完整 Card 对象
+4. 响应发送后，通过 `after()` 触发后台识别队列（`processRecognitionQueue`）
 
 ### PUT /api/cards/[id]
 

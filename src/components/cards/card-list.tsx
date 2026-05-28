@@ -18,6 +18,7 @@ interface CardData {
   email: string | null;
   phone: string | null;
   recognitionStatus: string;
+  viewedAt: string | null;
   images: CardImage[];
   createdAt: string;
 }

@@ -18,6 +18,7 @@ interface CardItemData {
   email: string | null;
   phone: string | null;
   recognitionStatus: string;
+  viewedAt: string | null;
   images: CardImage[];
   createdAt: string;
 }
@@ -50,6 +51,11 @@ export function CardItem({
         </div>
       )}
       {/* Status badge */}
+      {card.recognitionStatus === "PENDING" && (
+        <div className="absolute top-2 right-2 px-2 py-0.5 bg-gray-100 text-gray-600 text-xs rounded-full">
+          {t("statusPending")}
+        </div>
+      )}
       {card.recognitionStatus === "PROCESSING" && (
         <div className="absolute top-2 right-2 px-2 py-0.5 bg-yellow-100 text-yellow-800 text-xs rounded-full">
           {t("statusProcessing")}
@@ -58,6 +64,12 @@ export function CardItem({
       {card.recognitionStatus === "FAILED" && (
         <div className="absolute top-2 right-2 px-2 py-0.5 bg-red-100 text-red-800 text-xs rounded-full">
           {t("statusFailed")}
+        </div>
+      )}
+      {/* New badge for unviewed cards */}
+      {!card.viewedAt && card.recognitionStatus === "SUCCESS" && (
+        <div className="absolute top-2 right-2 px-2 py-0.5 bg-blue-600 text-white text-xs font-medium rounded-full">
+          New
         </div>
       )}
       {/* Selection checkbox */}

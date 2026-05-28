@@ -16,21 +16,36 @@ async function main() {
 
   const existing = await prisma.user.findUnique({ where: { username } });
   if (existing) {
-    console.log(`User "${username}" already exists, skipping seed.`);
-    return;
+    console.log(`User "${username}" already exists, skipping user seed.`);
+  } else {
+    const passwordHash = await bcrypt.hash(password, 12);
+
+    await prisma.user.create({
+      data: {
+        username,
+        passwordHash,
+        displayName,
+      },
+    });
+
+    console.log(`Seed user "${username}" created successfully.`);
   }
 
-  const passwordHash = await bcrypt.hash(password, 12);
+  // Seed SystemConfig for recognition queue
+  const configs = [
+    { key: "recognition_max_concurrency", value: "5" },
+    { key: "recognition_min_interval_ms", value: "100" },
+  ];
 
-  await prisma.user.create({
-    data: {
-      username,
-      passwordHash,
-      displayName,
-    },
-  });
+  for (const config of configs) {
+    await prisma.systemConfig.upsert({
+      where: { key: config.key },
+      update: { value: config.value },
+      create: config,
+    });
+  }
 
-  console.log(`Seed user "${username}" created successfully.`);
+  console.log("SystemConfig seeded successfully.");
 }
 
 main()

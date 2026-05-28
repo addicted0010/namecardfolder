@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useTranslations } from "next-intl";
-import { useRouter } from "@/i18n/navigation";
 import { toast } from "sonner";
 import { Loader2, Plus, X, Trash2, Upload } from "lucide-react";
 import { CardList } from "@/components/cards/card-list";
@@ -23,6 +22,7 @@ interface CardData {
   email: string | null;
   phone: string | null;
   recognitionStatus: string;
+  viewedAt: string | null;
   images: CardImage[];
   createdAt: string;
 }
@@ -30,7 +30,6 @@ interface CardData {
 export default function CardsPage() {
   const t = useTranslations("cards");
   const tc = useTranslations("common");
-  const router = useRouter();
   const [cards, setCards] = useState<CardData[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -68,7 +67,7 @@ export default function CardsPage() {
   async function handleUploadComplete(frontId?: string, backId?: string) {
     setCreating(true);
     try {
-      // Create card with uploaded images
+      // Create card with uploaded images (recognition is triggered automatically in background)
       const res = await fetch("/api/cards", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -76,11 +75,12 @@ export default function CardsPage() {
       });
 
       if (!res.ok) throw new Error("Failed to create card");
-      const card = await res.json();
 
-      // Navigate to detail page and auto-trigger recognition
+      // Close upload modal and refresh card list
       setShowUpload(false);
-      router.push(`/cards/${card.id}?autoRecognize=1`);
+      setFabOpen(false);
+      toast.success(t("uploadSuccess"));
+      await fetchCards();
     } catch {
       toast.error("Failed to create card");
     } finally {

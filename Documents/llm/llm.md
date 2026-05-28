@@ -6,7 +6,9 @@
 > - `src/lib/llm/prompt.ts` — 提示词模板
 > - `src/lib/llm/claude-provider.ts` — Claude API 实现
 > - `src/lib/llm/alibaba-provider.ts` — 通义千问 API 实现
-> - `src/app/api/cards/[id]/recognize/route.ts` — 识别 API 入口
+> - `src/lib/recognition-queue.ts` — 识别队列调度逻辑
+> - `src/app/api/cards/[id]/recognize/route.ts` — 手动识别 API 入口
+> - `src/app/api/cron/recognize/route.ts` — Cron 兜底触发端点
 
 ## 概述
 
@@ -131,6 +133,33 @@ interface LLMLogEntry {
 - **前后双面**：合并两面信息
 - **电话号码**：保留国际区号，区分固话和手机
 - **输出格式**：纯 JSON，无额外文本
+
+## 识别队列调度 (recognition-queue.ts)
+
+名片上传后不再阻塞等待识别，而是通过后台队列异步处理。
+
+### 触发方式
+
+1. **即时触发**：`POST /api/cards` 创建名片后，通过 `after()` 回调触发 `processRecognitionQueue()`
+2. **Cron 兜底**：`GET /api/cron/recognize` 每分钟由 Vercel Cron 调用，处理漏网之鱼
+
+### 队列处理逻辑 (`processRecognitionQueue`)
+
+1. 从 `SystemConfig` 读取 `recognition_max_concurrency` 和 `recognition_min_interval_ms`
+2. 查询当前 PROCESSING 状态卡片数量
+3. 如已达到最大并发数，跳过本次处理
+4. 取可用槽位数的 PENDING 卡片（按 createdAt ASC）
+5. 依次处理，每个卡片之间保持最小间隔
+
+### 重试策略
+
+- 遇到 HTTP 429（限流），状态回退为 PENDING 等待下次处理
+- 单次处理内重试最多 3 次，指数退避（1s → 2s → 4s）
+- 其他错误直接标记为 FAILED
+
+### 共享识别函数 (`recognizeCard`)
+
+核心识别逻辑从 route handler 抽取为共享函数，被队列处理和手动识别 API 共同调用。
 
 ## 识别 API 流程 (/api/cards/[id]/recognize)
 
