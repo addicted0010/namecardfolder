@@ -16,7 +16,7 @@ const nextConfig: NextConfig = {
       },
     ],
   },
-  serverExternalPackages: ["sharp", "bcryptjs"],
+  serverExternalPackages: ["sharp", "bcryptjs", "ali-oss"],
   allowedDevOrigins: [
     "100.85.207.42",
     "localhost",
