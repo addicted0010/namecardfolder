@@ -135,6 +135,8 @@ git push origin main
 2. 点击 **"Add New..." → "Project"**
 3. 选择你的 GitHub 仓库
 4. Framework Preset 选择 **Next.js**
+5. 部署后进入 **Settings → Functions → Function Region**，选择 **Singapore (sin1)**
+   > 与 Neon 数据库和阿里云 OSS 同区域，可显著降低 API 延迟
 
 ### 3. 配置 Vercel Postgres（Neon）
 
