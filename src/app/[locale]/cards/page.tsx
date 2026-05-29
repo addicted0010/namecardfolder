@@ -11,6 +11,7 @@ import { CardUpload } from "@/components/cards/card-upload";
 interface CardImage {
   id: string;
   storageUrl: string;
+  imageUrl?: string;
   side: string;
 }
 

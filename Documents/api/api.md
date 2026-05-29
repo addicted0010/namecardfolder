@@ -94,13 +94,15 @@ fullName、nameReading、company、title、email、phone、address、department�
       "company": "某公司",
       "title": "工程师",
       "recognitionStatus": "SUCCESS",
-      "images": [{ "id": "...", "storageUrl": "...", "side": "FRONT" }],
+      "images": [{ "id": "...", "storageUrl": "...", "imageUrl": "https://bucket.oss.../cards/xxx?Signature=...", "side": "FRONT" }],
       "createdAt": "2026-05-25T..."
     }
   ],
   "pagination": { "page": 1, "pageSize": 12, "total": 35, "totalPages": 3 }
 }
 ```
+
+> 注：`imageUrl` 为预生成的直接访问 URL。OSS 存储时为签名 URL（有效期 1 小时），本地/Vercel 存储时回退为 `/api/images/{id}` 代理路径。前端应优先使用 `imageUrl` 渲染图片。
 
 ### POST /api/cards
 

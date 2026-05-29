@@ -7,6 +7,7 @@ import { User, Building2, Mail, Phone, Check } from "lucide-react";
 interface CardImage {
   id: string;
   storageUrl: string;
+  imageUrl?: string;
   side: string;
 }
 
@@ -41,7 +42,7 @@ export function CardItem({
     <div className="aspect-[3/2] bg-gray-100 relative overflow-hidden">
       {frontImage ? (
         <img
-          src={`/api/images/${frontImage.id}`}
+          src={frontImage.imageUrl || `/api/images/${frontImage.id}`}
           alt={card.fullName || "Business card"}
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
         />

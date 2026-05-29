@@ -7,6 +7,7 @@ import { CreditCard } from "lucide-react";
 interface CardImage {
   id: string;
   storageUrl: string;
+  imageUrl?: string;
   side: string;
 }
 

@@ -135,7 +135,7 @@ graph TD
   - 正常模式 → Link 链接到详情页
   - 选择模式 → 点击切换选中（显示圆形勾选标记）
 
-**图片访问：** `src={/api/images/${frontImage.id}}`（通过代理 API）
+**图片访问：** `src={frontImage.imageUrl || /api/images/${frontImage.id}}`（优先使用 API 预生成的签名 URL 直连 OSS，fallback 到代理 API）
 
 ### CardSearch
 

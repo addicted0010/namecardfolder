@@ -3,6 +3,7 @@ import { authenticate } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { apiResponse, apiError, ApiError, paginate } from "@/lib/utils";
 import { processRecognitionQueue } from "@/lib/recognition-queue";
+import { AliyunOSSProvider } from "@/lib/storage/aliyun-oss";
 
 export async function GET(request: NextRequest) {
   try {
@@ -45,8 +46,10 @@ export async function GET(request: NextRequest) {
       prisma.card.count({ where }),
     ]);
 
+    const cardsWithUrls = await enrichImagesWithUrls(cards);
+
     return apiResponse({
-      data: cards,
+      data: cardsWithUrls,
       pagination: paginate(page, pageSize, total),
     });
   } catch (error) {
@@ -100,4 +103,42 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     return apiError(error);
   }
+}
+
+/**
+ * Enrich card images with direct access URLs (signed URLs for OSS).
+ * This avoids N+1 API calls from the frontend for each image.
+ */
+async function enrichImagesWithUrls(
+  cards: Array<{ images: Array<{ id: string; storageUrl: string; [key: string]: unknown }> } & Record<string, unknown>>
+) {
+  const storageType = process.env.STORAGE_PROVIDER || "local";
+
+  if (storageType === "aliyun-oss") {
+    const ossProvider = new AliyunOSSProvider();
+    return Promise.all(
+      cards.map(async (card) => ({
+        ...card,
+        images: await Promise.all(
+          card.images.map(async (img) => {
+            if (img.storageUrl.startsWith("oss://")) {
+              const storageKey = (img.storageUrl as string).replace("oss://", "");
+              const imageUrl = await ossProvider.getSignedUrl(storageKey, 3600);
+              return { ...img, imageUrl };
+            }
+            return { ...img, imageUrl: `/api/images/${img.id}` };
+          })
+        ),
+      }))
+    );
+  }
+
+  // For local / vercel storage, use proxy API
+  return cards.map((card) => ({
+    ...card,
+    images: card.images.map((img) => ({
+      ...img,
+      imageUrl: `/api/images/${img.id}`,
+    })),
+  }));
 }

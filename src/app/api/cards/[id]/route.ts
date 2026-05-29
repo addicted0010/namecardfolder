@@ -3,6 +3,7 @@ import { authenticate } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getStorageProvider } from "@/lib/storage";
 import { apiResponse, apiError, ApiError } from "@/lib/utils";
+import { AliyunOSSProvider } from "@/lib/storage/aliyun-oss";
 
 export async function GET(
   request: NextRequest,
@@ -41,7 +42,27 @@ export async function GET(
       });
     }
 
-    return apiResponse(card);
+    // Enrich images with direct access URLs
+    const storageType = process.env.STORAGE_PROVIDER || "local";
+    let enrichedImages: Array<Record<string, unknown>> = card.images.map(
+      (img: { id: string; storageUrl: string }) => ({ ...img, imageUrl: `/api/images/${img.id}` })
+    );
+
+    if (storageType === "aliyun-oss") {
+      const ossProvider = new AliyunOSSProvider();
+      enrichedImages = await Promise.all(
+        card.images.map(async (img: { id: string; storageUrl: string }) => {
+          if (img.storageUrl.startsWith("oss://")) {
+            const storageKey = img.storageUrl.replace("oss://", "");
+            const imageUrl = await ossProvider.getSignedUrl(storageKey, 3600);
+            return { ...img, imageUrl };
+          }
+          return { ...img, imageUrl: `/api/images/${img.id}` };
+        })
+      );
+    }
+
+    return apiResponse({ ...card, images: enrichedImages });
   } catch (error) {
     return apiError(error);
   }

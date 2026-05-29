@@ -107,7 +107,27 @@ graph LR
 3. 使用临时凭证创建 OSS Client 执行操作
 4. 临时凭证缓存在内存中，到期前 5 分钟重新获取
 
-## 图片代理 API (/api/images/[id])
+## 图片访问优化
+
+### 签名 URL 预生成（推荐，当前方案）
+
+为消除前端加载图片时的 N+1 API 调用问题，列表 API 和详情 API 在返回数据时，会为每张图片预生成 OSS 签名 URL，附加到 `imageUrl` 字段中：
+
+```
+GET /api/cards → 返回卡片数据（每张图片含 imageUrl 直链）→ 前端直接 <img src={imageUrl}>
+```
+
+- OSS 存储：批量生成签名 URL（有效期 1 小时），前端通过 `imageUrl` 字段直连 OSS
+- 本地/Vercel 存储：`imageUrl` 回退为 `/api/images/{id}` 代理路径
+- 前端组件使用 `image.imageUrl || /api/images/${image.id}` 做兼容处理
+
+**性能对比**：
+| 方案 | 请求数 | 典型延迟 |
+|------|--------|----------|
+| 旧方案（代理） | 1 + N（列表 + 每张图片） | ~3s (12张图) |
+| 新方案（预签名） | 1（仅列表请求） | ~300ms |
+
+### 图片代理 API (/api/images/[id])（兼容保留）
 
 所有图片通过后端代理 API 提供，确保访问控制：
 
