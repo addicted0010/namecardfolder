@@ -3,6 +3,7 @@ import { getLLMProvider } from "@/lib/llm";
 import { processCardImage } from "@/lib/image-processing";
 import { readFile } from "fs/promises";
 import { join } from "path";
+import { AliyunOSSProvider } from "@/lib/storage/aliyun-oss";
 
 /**
  * Fetch image buffer from storage URL.
@@ -11,7 +12,13 @@ async function fetchImageBuffer(storageUrl: string): Promise<Buffer> {
   if (storageUrl.startsWith("/uploads/")) {
     const filePath = join(process.cwd(), "public", storageUrl);
     return await readFile(filePath);
+  } else if (storageUrl.startsWith("oss://")) {
+    // Aliyun OSS: extract key and fetch via SDK
+    const storageKey = storageUrl.replace("oss://", "");
+    const ossProvider = new AliyunOSSProvider();
+    return await ossProvider.fetch(storageKey);
   } else {
+    // Vercel Blob (private): fetch with auth token
     const res = await fetch(storageUrl, {
       headers: {
         authorization: `Bearer ${process.env.BLOB_READ_WRITE_TOKEN}`,

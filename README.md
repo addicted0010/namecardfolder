@@ -27,7 +27,7 @@
 | 认证 | JWT（jose）+ HttpOnly Cookie |
 | 国际化 | next-intl（zh / en / ja） |
 | LLM | Anthropic Claude 或阿里云百炼（qwen），OpenAI 兼容接口 |
-| 文件存储 | 本地磁盘（开发）/ Vercel Blob 私有模式（生产），通过 API 代理鉴权访问 |
+| 文件存储 | 本地磁盘（开发）/ 阿里云 OSS（生产，STS 临时令牌）/ Vercel Blob（备选），通过 API 代理鉴权访问 |
 
 ---
 
@@ -90,7 +90,7 @@ src/
 │   └── ui/
 ├── lib/
 │   ├── llm/               # LLM 调用封装（Claude & 阿里云）
-│   ├── storage/           # 存储抽象（本地 / Vercel Blob）
+│   ├── storage/           # 存储抽象（本地 / Vercel Blob / 阿里云 OSS）
 │   └── auth.ts / prisma.ts / utils.ts
 ├── i18n/                  # next-intl 配置
 └── middleware.ts          # 路由守卫 & 语言检测
@@ -111,8 +111,13 @@ prisma/                    # Schema & 数据库迁移
 | `CLAUDE_MODEL` | 如 `claude-sonnet-4.6` |
 | `ALIBABA_API_KEY` | 阿里云百炼 API Key |
 | `ALIBABA_MODEL` | 如 `qwen3.7-max` |
-| `STORAGE_PROVIDER` | `local`（开发）/ `vercel`（生产） |
-| `BLOB_READ_WRITE_TOKEN` | Vercel Blob Token（生产环境，私有模式鉴权用） |
+| `STORAGE_PROVIDER` | `local`（开发）/ `aliyun-oss`（生产）/ `vercel`（备选） |
+| `ALIYUN_OSS_ACCESS_KEY_ID` | 阿里云 RAM AccessKey ID（OSS 模式） |
+| `ALIYUN_OSS_ACCESS_KEY_SECRET` | 阿里云 RAM AccessKey Secret（OSS 模式） |
+| `ALIYUN_OSS_ROLE_ARN` | RAM 角色 ARN（STS AssumeRole 用） |
+| `ALIYUN_OSS_REGION` | OSS 区域（如 `oss-ap-southeast-1`） |
+| `ALIYUN_OSS_BUCKET` | OSS Bucket 名称 |
+| `BLOB_READ_WRITE_TOKEN` | Vercel Blob Token（仅 vercel 模式） |
 
 详细说明及可选配置参见 [DEPLOY.md](./DEPLOY.md)。
 

@@ -3,6 +3,7 @@ import { authenticate } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { readFile } from "fs/promises";
 import { join } from "path";
+import { AliyunOSSProvider } from "@/lib/storage/aliyun-oss";
 
 export async function GET(
   request: NextRequest,
@@ -37,6 +38,18 @@ export async function GET(
       // Local storage: read from filesystem
       const filePath = join(process.cwd(), "public", image.storageUrl);
       buffer = await readFile(filePath);
+    } else if (image.storageUrl.startsWith("oss://")) {
+      // Aliyun OSS: redirect to signed URL for direct access (faster)
+      const storageKey = image.storageUrl.replace("oss://", "");
+      const ossProvider = new AliyunOSSProvider();
+      const signedUrl = await ossProvider.getSignedUrl(storageKey, 3600);
+      return new Response(null, {
+        status: 302,
+        headers: {
+          Location: signedUrl,
+          "Cache-Control": "private, max-age=3500",
+        },
+      });
     } else {
       // Vercel Blob (private): fetch with auth token
       const res = await fetch(image.storageUrl, {

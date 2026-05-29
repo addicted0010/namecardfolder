@@ -14,7 +14,7 @@ CardVault 是一个基于 AI 的名片管理 Web 应用，支持用户上传名�
 | 数据库 | PostgreSQL (Neon serverless) |
 | ORM | Prisma v7 |
 | 认证 | JWT (jose) + HttpOnly Cookie |
-| 文件存储 | 本地文件系统 / Vercel Blob (私有模式) |
+| 文件存储 | 本地文件系统 / 阿里云 OSS (STS 临时令牌) / Vercel Blob (备选) |
 | AI 识别 | Claude API / 阿里巴巴通义千问 API |
 | 国际化 | next-intl |
 | 部署 | Vercel |
@@ -36,6 +36,7 @@ graph TB
     API --> PrismaLib[数据库 lib/prisma]
     
     StorageLib --> LocalFS[本地文件系统]
+    StorageLib --> AliyunOSS[阿里云 OSS]
     StorageLib --> VercelBlob[Vercel Blob Store]
     
     LLMLib --> Claude[Claude API]
@@ -124,6 +125,7 @@ graph LR
     E -->|非本人| F[403]
     E -->|本人| G{存储类型}
     G -->|本地| H[读取文件系统]
+    G -->|OSS| K[302 重定向到签名URL]
     G -->|Blob| I[携带 Token 请求 Blob]
     H --> J[返回图片 Binary]
     I --> J
@@ -133,6 +135,6 @@ graph LR
 
 1. **工厂模式**：LLM 和存储模块通过工厂函数按环境变量动态选择实现
 2. **分层架构**：API 路由 → 业务逻辑（lib/）→ 数据层（Prisma）
-3. **安全优先**：JWT HttpOnly Cookie、私有 Blob 存储、资源归属校验
+3. **安全优先**：JWT HttpOnly Cookie、私有存储（OSS/Blob）、资源归属校验
 4. **多租户隔离**：所有数据操作均带 `userId` 过滤，确保用户只能访问自己的数据
 5. **优雅降级**：LLM 错误时记录日志并标记状态为 FAILED，不中断主流程

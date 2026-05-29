@@ -146,13 +146,11 @@ git push origin main
    postgresql://user:password@host:port/dbname?sslmode=require
    ```
 
-### 4. 配置 Vercel Blob Storage
+### 4. 配置文件存储（阿里云 OSS，推荐）
 
-1. 在 **Storage** 标签页中，点击 **"Create Database"**，选择 **Blob**
-2. 创建完成后，Vercel 会自动注入 `BLOB_READ_WRITE_TOKEN` 环境变量
-3. 确保 Blob Store 配置为 **Private** 访问模式（默认即是）
+参照下方 [阿里云 OSS 配置步骤](#阿里云-oss-配置步骤) 完成 OSS Bucket、RAM 用户和角色的创建，然后在 Vercel 环境变量中配置相关参数。
 
-> **说明**：本项目使用私有访问模式，图片通过后端 API 代理（`/api/images/[id]`）校验用户登录状态和资源归属后返回，确保仅登录用户可访问自己的名片图片。
+> **备选方案**：如果仍需使用 Vercel Blob，在 **Storage** 标签页中创建 Blob Store，并将 `STORAGE_PROVIDER` 设为 `vercel`。Vercel 会自动注入 `BLOB_READ_WRITE_TOKEN`。
 
 ### 5. 配置环境变量
 
@@ -169,11 +167,16 @@ git push origin main
 | `ALIBABA_BASE_URL` | `https://dashscope-intl.aliyuncs.com/compatible-mode/v1` | 百炼 API 地址 |
 | `ALIBABA_API_KEY` | 你的百炼 API Key | 百炼密钥 |
 | `ALIBABA_MODEL` | `qwen3.7-max`（或 `qwen3.6-plus`） | 百炼模型 |
-| `STORAGE_PROVIDER` | `vercel` | 使用 Vercel Blob 存储 |
-| `BLOB_READ_WRITE_TOKEN` | （自动注入） | Vercel Blob Token |
+| `STORAGE_PROVIDER` | `aliyun-oss` | 使用阿里云 OSS 存储（推荐） |
+| `ALIYUN_OSS_ACCESS_KEY_ID` | RAM 用户 AccessKey ID | 阿里云 RAM 凭证 |
+| `ALIYUN_OSS_ACCESS_KEY_SECRET` | RAM 用户 AccessKey Secret | 阿里云 RAM 凭证 |
+| `ALIYUN_OSS_ROLE_ARN` | `acs:ram::<ID>:role/xxx` | STS 角色 ARN |
+| `ALIYUN_OSS_REGION` | `oss-ap-southeast-1` | OSS 区域 |
+| `ALIYUN_OSS_BUCKET` | 你的 Bucket 名称 | OSS Bucket |
+| `ALIYUN_OSS_STS_ENDPOINT` | `https://sts.aliyuncs.com` | STS 端点（可选） |
 | `NEXT_PUBLIC_APP_URL` | 你的生产域名（如 `https://cardvault.example.com`） | 应用公开地址 |
 
-> **提示**：Vercel Postgres 和 Blob 创建后会自动注入部分变量，只需手动添加 LLM 和 JWT 相关的变量。
+> **提示**：Vercel Postgres 创建后会自动注入数据库相关变量。阿里云 OSS 和 LLM 相关的变量需手动添加。
 
 ### 6. 运行数据库迁移
 
@@ -252,10 +255,112 @@ DATABASE_URL="postgresql://..." SEED_USERNAME=admin SEED_PASSWORD=你的密码 n
 
 | 变量 | 说明 | 可选值 |
 |------|------|--------|
-| `STORAGE_PROVIDER` | 文件存储方式 | `local`（开发）/ `vercel`（生产） |
-| `BLOB_READ_WRITE_TOKEN` | Vercel Blob Token（生产环境） | Vercel 自动注入 |
+| `STORAGE_PROVIDER` | 文件存储方式 | `local`（开发）/ `vercel`（Vercel Blob）/ `aliyun-oss`（阿里云 OSS） |
+| `BLOB_READ_WRITE_TOKEN` | Vercel Blob Token（仅 vercel 模式） | Vercel 自动注入 |
+| `ALIYUN_OSS_ACCESS_KEY_ID` | 阿里云 RAM 用户 AccessKey ID | `LTAI5t...` |
+| `ALIYUN_OSS_ACCESS_KEY_SECRET` | 阿里云 RAM 用户 AccessKey Secret | `xxxxx` |
+| `ALIYUN_OSS_ROLE_ARN` | RAM 角色 ARN（用于 STS AssumeRole） | `acs:ram::123456:role/oss-access` |
+| `ALIYUN_OSS_REGION` | OSS Bucket 所在区域 | `oss-ap-southeast-1` |
+| `ALIYUN_OSS_BUCKET` | OSS Bucket 名称 | `cardvault-images` |
+| `ALIYUN_OSS_STS_ENDPOINT` | STS 服务端点（可选） | `https://sts.aliyuncs.com` |
 
-> **私有访问模式说明**：生产环境的 Blob Store 配置为 private 模式。前端不直接访问 Blob URL，而是通过 `/api/images/[id]` 代理 API 获取图片。该代理会校验用户登录状态和图片归属权，确保仅登录用户可查看自己的名片图片。`BLOB_READ_WRITE_TOKEN` 用于后端服务访问私有 Blob 存储。
+> **存储模式说明**：
+> - `local`：开发环境，图片存储在本地 `public/uploads/` 目录。
+> - `vercel`：使用 Vercel Blob Store 私有模式，通过后端 API 代理访问。
+> - `aliyun-oss`：使用阿里云 OSS，通过 STS 临时令牌访问。图片代理 API 会返回 302 重定向到 OSS 签名 URL，客户端直接从 OSS 下载，速度更快。
+
+#### 阿里云 OSS 配置步骤
+
+##### 1. 创建 OSS Bucket
+
+1. 登录 [阿里云 OSS 控制台](https://oss.console.aliyun.com/)
+2. 创建 Bucket：
+   - **Bucket 名称**：自定义（如 `cardvault-images`）
+   - **地域**：选择靠近用户的区域（如 `ap-southeast-1` 新加坡）
+   - **存储类型**：标准存储
+   - **读写权限**：**私有**（Private）
+   - **服务端加密**：推荐开启 OSS 完全托管加密
+3. 记录 Bucket 名称和区域（用于环境变量 `ALIYUN_OSS_BUCKET` 和 `ALIYUN_OSS_REGION`）
+
+##### 2. 创建 RAM 用户
+
+1. 登录 [RAM 控制台](https://ram.console.aliyun.com/)
+2. 创建用户：
+   - **登录名称**：`cardvault-sts`（仅用于 API 调用）
+   - **访问方式**：勾选 **OpenAPI 调用访问**
+3. 创建完成后，保存 **AccessKey ID** 和 **AccessKey Secret**
+4. 为该用户添加权限：`AliyunSTSAssumeRoleAccess`（允许调用 STS AssumeRole）
+
+##### 3. 创建 RAM 角色
+
+1. 在 RAM 控制台 → 角色管理 → 创建角色
+2. 选择 **阿里云账号** 类型
+3. 角色名称：`cardvault-oss-access`
+4. 信任策略中的受信云账号选择 **当前云账号**
+5. 创建完成后，为角色添加权限策略：
+   - 进入 RAM 控制台 → **权限策略** → **创建权限策略**
+   - 策略名称：`cardvault-oss-readwrite`
+   - 选择 **脚本编辑** 模式，粘贴以下 JSON：
+
+**自定义策略**（最小权限原则）：
+
+```json
+{
+  "Version": "1",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "oss:PutObject",
+        "oss:GetObject",
+        "oss:DeleteObject"
+      ],
+      "Resource": [
+        "acs:oss:*:*:cardvault-images/cards/*"
+      ]
+    }
+  ]
+}
+```
+
+> 将 `cardvault-images` 替换为你的 Bucket 名称。
+
+6. 策略创建完成后，回到 **角色** → 点击角色名 `cardvault-oss-access` → **权限管理** 标签页 → **新增授权** → 搜索 `cardvault-oss-readwrite` → 确认授权
+7. 复制角色 ARN（在角色详情页顶部，格式：`acs:ram::<账号ID>:role/cardvault-oss-access`）
+
+##### 4. 配置环境变量
+
+在 Vercel 项目 **Settings → Environment Variables** 中添加：
+
+| 变量名 | 值 |
+|--------|-----|
+| `STORAGE_PROVIDER` | `aliyun-oss` |
+| `ALIYUN_OSS_ACCESS_KEY_ID` | RAM 用户的 AccessKey ID |
+| `ALIYUN_OSS_ACCESS_KEY_SECRET` | RAM 用户的 AccessKey Secret |
+| `ALIYUN_OSS_ROLE_ARN` | RAM 角色的 ARN |
+| `ALIYUN_OSS_REGION` | `oss-ap-southeast-1`（按实际区域填写） |
+| `ALIYUN_OSS_BUCKET` | 你的 Bucket 名称 |
+| `ALIYUN_OSS_STS_ENDPOINT` | `https://sts.aliyuncs.com`（国际站，国内用 `https://sts.cn-hangzhou.aliyuncs.com`） |
+
+##### 5. 迁移现有数据（从 Vercel Blob 迁移到 OSS）
+
+如果已有数据存储在 Vercel Blob 中，运行迁移脚本：
+
+```bash
+# 先预览（不做实际修改）
+DATABASE_URL="..." BLOB_READ_WRITE_TOKEN="..." \
+ALIYUN_OSS_ACCESS_KEY_ID="..." ALIYUN_OSS_ACCESS_KEY_SECRET="..." \
+ALIYUN_OSS_ROLE_ARN="..." ALIYUN_OSS_REGION="..." ALIYUN_OSS_BUCKET="..." \
+npx tsx scripts/migrate-blob-to-oss.ts --dry-run
+
+# 确认无误后执行迁移
+DATABASE_URL="..." BLOB_READ_WRITE_TOKEN="..." \
+ALIYUN_OSS_ACCESS_KEY_ID="..." ALIYUN_OSS_ACCESS_KEY_SECRET="..." \
+ALIYUN_OSS_ROLE_ARN="..." ALIYUN_OSS_REGION="..." ALIYUN_OSS_BUCKET="..." \
+npx tsx scripts/migrate-blob-to-oss.ts
+```
+
+> 迁移脚本支持 `--batch=N` 参数控制并发数（默认 10）。已迁移的图片会自动跳过，可安全重复运行。
 
 ### 应用
 
