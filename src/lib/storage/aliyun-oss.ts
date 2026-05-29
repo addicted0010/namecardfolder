@@ -86,6 +86,34 @@ function encodeRFC3986(str: string): string {
 }
 
 /**
+ * Generate OSS signed URL using permanent RAM credentials (local HMAC-SHA1).
+ * Zero network overhead — purely local cryptographic computation.
+ * 
+ * URL format: https://{bucket}.{region}.aliyuncs.com/{object}?OSSAccessKeyId=...&Expires=...&Signature=...
+ */
+function generateSignedUrl(storageKey: string, expires: number = 3600): string {
+  const accessKeyId = process.env.ALIYUN_OSS_ACCESS_KEY_ID!;
+  const accessKeySecret = process.env.ALIYUN_OSS_ACCESS_KEY_SECRET!;
+  const bucket = process.env.ALIYUN_OSS_BUCKET!;
+  const region = process.env.ALIYUN_OSS_REGION!;
+
+  const expiresTime = Math.floor(Date.now() / 1000) + expires;
+
+  // StringToSign = HTTP-Verb + "\n" + Content-MD5 + "\n" + Content-Type + "\n" + Expires + "\n" + CanonicalizedResource
+  const stringToSign = `GET\n\n\n${expiresTime}\n/${bucket}/${storageKey}`;
+
+  const signature = crypto
+    .createHmac("sha1", accessKeySecret)
+    .update(stringToSign)
+    .digest("base64");
+
+  const host = `${bucket}.${region}.aliyuncs.com`;
+  const encodedKey = storageKey.split("/").map(encodeURIComponent).join("/");
+
+  return `https://${host}/${encodedKey}?OSSAccessKeyId=${encodeURIComponent(accessKeyId)}&Expires=${expiresTime}&Signature=${encodeURIComponent(signature)}`;
+}
+
+/**
  * Get or refresh OSS client with valid STS credentials.
  * Caches credentials and refreshes 5 minutes before expiry.
  */
@@ -146,12 +174,12 @@ export class AliyunOSSProvider implements StorageProvider {
   }
 
   /**
-   * Generate a signed URL for direct client access (faster than proxy).
+   * Generate a signed URL for direct client access using local HMAC computation.
+   * This does NOT require STS or any network call — pure local crypto.
    * Default expiration: 1 hour.
    */
   async getSignedUrl(storageKey: string, expires: number = 3600): Promise<string> {
-    const client = await getOSSClient();
-    return client.signatureUrl(storageKey, { expires });
+    return generateSignedUrl(storageKey, expires);
   }
 
   /**
