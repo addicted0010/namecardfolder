@@ -1,5 +1,5 @@
-import { LLMProvider, ImageInput, RecognitionResult, CardDetectionResult, LLMLogEntry } from "./types";
-import { CARD_RECOGNITION_PROMPT, CARD_DETECTION_PROMPT } from "./prompt";
+import { LLMProvider, ImageInput, RecognitionResult, CardDetectionResult, OrientationResult, LLMLogEntry } from "./types";
+import { CARD_RECOGNITION_PROMPT, CARD_DETECTION_PROMPT, CARD_ORIENTATION_PROMPT } from "./prompt";
 
 export class AlibabaProvider implements LLMProvider {
   private baseUrl: string;
@@ -209,6 +209,95 @@ export class AlibabaProvider implements LLMProvider {
       };
     }
   }
+
+  async detectOrientation(
+    image: ImageInput
+  ): Promise<{ result: OrientationResult; log: LLMLogEntry }> {
+    const startTime = Date.now();
+
+    const imageUrl = image.base64
+      ? `data:${image.mimeType};base64,${image.base64}`
+      : image.url;
+
+    const content = [
+      { type: "image_url" as const, image_url: { url: imageUrl } },
+      { type: "text" as const, text: CARD_ORIENTATION_PROMPT },
+    ];
+
+    const requestBody = {
+      model: this.model,
+      messages: [{ role: "user", content }],
+      max_tokens: 256,
+      enable_thinking: false,
+    };
+
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${this.apiKey}`,
+    };
+
+    const sanitizedHeaders: Record<string, string> = {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ***${this.apiKey.slice(-4)}`,
+    };
+
+    let responseBody: unknown = null;
+    let responseStatus = 0;
+    let errorMessage: string | undefined;
+
+    try {
+      const response = await fetch(`${this.baseUrl}/chat/completions`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify(requestBody),
+      });
+
+      responseStatus = response.status;
+      responseBody = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          `Alibaba API error: ${response.status} - ${JSON.stringify(responseBody)}`
+        );
+      }
+
+      const text =
+        (responseBody as { choices: { message: { content: string } }[] })
+          .choices[0]?.message?.content || "";
+      const result = parseOrientationJSON(text);
+      const durationMs = Date.now() - startTime;
+
+      return {
+        result,
+        log: {
+          provider: "alibaba",
+          model: this.model,
+          requestHeaders: sanitizedHeaders,
+          requestBody,
+          responseBody,
+          responseStatus,
+          durationMs,
+        },
+      };
+    } catch (error) {
+      const durationMs = Date.now() - startTime;
+      errorMessage = error instanceof Error ? error.message : "Unknown error";
+
+      return {
+        result: { rotation: 0 },
+        log: {
+          provider: "alibaba",
+          model: this.model,
+          requestHeaders: sanitizedHeaders,
+          requestBody,
+          responseBody: responseBody || { error: errorMessage },
+          responseStatus: responseStatus || 500,
+          durationMs,
+          errorMessage,
+        },
+      };
+    }
+  }
 }
 
 function parseDetectionJSON(text: string): CardDetectionResult {
@@ -233,4 +322,20 @@ function parseJSON(text: string): RecognitionResult {
     }
   }
   return { rawText: text, notes: text };
+}
+
+function parseOrientationJSON(text: string): OrientationResult {
+  const jsonMatch = text.match(/\{[\s\S]*\}/);
+  if (jsonMatch) {
+    try {
+      const parsed = JSON.parse(jsonMatch[0]);
+      const rotation = parsed.rotation;
+      if (rotation === 0 || rotation === 90 || rotation === 180 || rotation === 270) {
+        return { rotation };
+      }
+    } catch {
+      // fall through
+    }
+  }
+  return { rotation: 0 };
 }

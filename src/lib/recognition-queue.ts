@@ -103,6 +103,22 @@ export async function recognizeCard(cardId: string): Promise<"SUCCESS" | "FAILED
           },
         });
 
+        // Save LLM orientation log
+        await prisma.llmLog.create({
+          data: {
+            userId: card.userId,
+            cardId,
+            provider: processed.orientationLog.provider,
+            model: processed.orientationLog.model,
+            requestHeaders: processed.orientationLog.requestHeaders as never,
+            requestBody: processed.orientationLog.requestBody as never,
+            responseBody: processed.orientationLog.responseBody as never,
+            responseStatus: processed.orientationLog.responseStatus,
+            durationMs: processed.orientationLog.durationMs,
+            errorMessage: processed.orientationLog.errorMessage,
+          },
+        });
+
         // Check for rate limiting from detectCard
         if (processed.log.responseStatus === 429) {
           await prisma.card.update({

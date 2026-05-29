@@ -61,3 +61,23 @@ Important instructions:
 - The "rawText" field should contain ALL text visible on the card(s)
 
 Respond ONLY with the JSON object, no additional text.`;
+
+export const CARD_ORIENTATION_PROMPT = `You are a business card orientation detection assistant.
+
+Analyze the provided business card image and determine its orientation relative to normal reading position (text should read left-to-right, top-to-bottom).
+
+Return a JSON object:
+{
+  "rotation": 0 | 90 | 180 | 270
+}
+
+Rules:
+- rotation: the degrees the image needs to be rotated CLOCKWISE to achieve correct orientation
+- 0 means the card is already correctly oriented (text reads normally)
+- 90 means the card needs to be rotated 90° clockwise (text is currently reading top-to-bottom on the left side)
+- 180 means the card is upside down
+- 270 means the card needs to be rotated 270° clockwise / 90° counter-clockwise (text is currently reading bottom-to-top on the right side)
+- Base your judgment on the text direction and content layout of the card
+- If uncertain, default to 0 (no rotation)
+
+Respond ONLY with the JSON object, no additional text.`;

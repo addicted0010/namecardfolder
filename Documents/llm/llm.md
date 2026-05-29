@@ -12,9 +12,10 @@
 
 ## 概述
 
-LLM 模块负责名片图片的 AI 处理，包含两个核心功能：
+LLM 模块负责名片图片的 AI 处理，包含三个核心功能：
 1. **卡片检测**（detectCard）：判断图片是否为名片，返回边界框坐标
-2. **文字识别**（recognizeCard）：从名片图片中提取结构化信息
+2. **朝向检测**（detectOrientation）：检测名片朝向，返回需旋转的角度（0°/90°/180°/270°）
+3. **文字识别**（recognizeCard）：从名片图片中提取结构化信息
 
 模块采用**工厂模式**，支持 Claude 和阿里巴巴通义千问两种 LLM 提供商。
 
@@ -31,6 +32,7 @@ graph TB
     
     subgraph 功能
         Detect[detectCard 卡片检测]
+        Orient[detectOrientation 朝向检测]
         Recognize[recognizeCard 文字识别]
     end
 ```
@@ -80,6 +82,19 @@ interface CardDetectionResult {
   } | null;
 }
 ```
+
+### OrientationResult（朝向检测结果）
+
+```typescript
+interface OrientationResult {
+  rotation: 0 | 90 | 180 | 270;  // 需要顺时针旋转的角度
+}
+```
+
+- `0`：名片已正向（无需旋转）
+- `90`：需顺时针旋转 90°
+- `180`：名片上下颠倒
+- `270`：需顺时针旋转 270°（即逆时针 90°）
 
 ### LLMLogEntry（日志条目）
 

@@ -43,6 +43,10 @@ export interface CardDetectionResult {
   } | null;
 }
 
+export interface OrientationResult {
+  rotation: 0 | 90 | 180 | 270;
+}
+
 export interface LLMProvider {
   recognizeCard(
     images: ImageInput[]
@@ -51,4 +55,8 @@ export interface LLMProvider {
   detectCard(
     image: ImageInput
   ): Promise<{ result: CardDetectionResult; log: LLMLogEntry }>;
+
+  detectOrientation(
+    image: ImageInput
+  ): Promise<{ result: OrientationResult; log: LLMLogEntry }>;
 }

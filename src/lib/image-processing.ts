@@ -14,7 +14,7 @@ export async function processCardImage(
   oldStorageUrl: string,
   mimeType: string,
   filename: string
-): Promise<{ storageKey: string; url: string; sizeBytes: number; log: LLMLogEntry; buffer: Buffer }> {
+): Promise<{ storageKey: string; url: string; sizeBytes: number; log: LLMLogEntry; orientationLog: LLMLogEntry; buffer: Buffer }> {
   // Step 1: Create preview buffer for LLM (rotated + resized)
   const previewBuffer = await sharp(rawBuffer)
     .rotate() // auto-orient from EXIF
@@ -94,16 +94,34 @@ export async function processCardImage(
     .jpeg({ quality: 72 })
     .toBuffer();
 
-  // Step 9: Replace in storage (delete old + upload new)
+  // Step 9: Detect orientation and rotate if needed
+  const orientBase64 = compressedBuffer.toString("base64");
+  const { result: orientResult, log: orientLog } = await llm.detectOrientation({
+    url: oldStorageUrl,
+    base64: orientBase64,
+    mimeType: "image/jpeg",
+    side: "FRONT",
+  });
+
+  let finalBuffer = compressedBuffer;
+  if (orientResult.rotation !== 0) {
+    finalBuffer = await sharp(compressedBuffer)
+      .rotate(orientResult.rotation)
+      .jpeg({ quality: 72 })
+      .toBuffer();
+  }
+
+  // Step 10: Replace in storage (delete old + upload new)
   const storage = getStorageProvider();
   await storage.delete(oldStorageKey);
-  const { storageKey, url } = await storage.upload(compressedBuffer, filename, "image/jpeg");
+  const { storageKey, url } = await storage.upload(finalBuffer, filename, "image/jpeg");
 
   return {
     storageKey,
     url,
-    sizeBytes: compressedBuffer.length,
+    sizeBytes: finalBuffer.length,
     log,
-    buffer: compressedBuffer,
+    orientationLog: orientLog,
+    buffer: finalBuffer,
   };
 }
