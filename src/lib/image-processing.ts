@@ -95,13 +95,49 @@ export async function processCardImage(
     .toBuffer();
 
   // Step 9: Detect orientation and rotate if needed
-  const orientBase64 = compressedBuffer.toString("base64");
-  const { result: orientResult, log: orientLog } = await llm.detectOrientation({
-    url: oldStorageUrl,
-    base64: orientBase64,
-    mimeType: "image/jpeg",
-    side: "FRONT",
-  });
+  // Strategy: use image dimensions as primary signal (portrait = needs rotation),
+  // then use LLM to verify direction
+  const compressedMeta = await sharp(compressedBuffer).metadata();
+  const cWidth = compressedMeta.width || 1000;
+  const cHeight = compressedMeta.height || 1000;
+  const isPortrait = cHeight > cWidth * 1.1;
+
+  let orientResult: { rotation: 0 | 90 | 180 | 270 } = { rotation: 0 };
+  let orientLog: LLMLogEntry;
+
+  if (isPortrait) {
+    // Portrait image → definitely needs rotation. Try 90° and verify with LLM.
+    const rotated90 = await sharp(compressedBuffer)
+      .rotate(90)
+      .jpeg({ quality: 72 })
+      .toBuffer();
+    const base64_90 = rotated90.toString("base64");
+    const { result: verifyResult, log: verifyLog } = await llm.detectOrientation({
+      url: oldStorageUrl,
+      base64: base64_90,
+      mimeType: "image/jpeg",
+      side: "FRONT",
+    });
+    orientLog = verifyLog;
+    // If LLM says rotated image needs 0 rotation, 90° was correct
+    // If LLM says it needs 180°, then we need 270° instead (90+180=270)
+    if (verifyResult.rotation === 0) {
+      orientResult = { rotation: 90 };
+    } else {
+      orientResult = { rotation: 270 };
+    }
+  } else {
+    // Landscape image → check if upside down via LLM
+    const orientBase64 = compressedBuffer.toString("base64");
+    const { result, log: oLog } = await llm.detectOrientation({
+      url: oldStorageUrl,
+      base64: orientBase64,
+      mimeType: "image/jpeg",
+      side: "FRONT",
+    });
+    orientLog = oLog;
+    orientResult = result;
+  }
 
   let finalBuffer = compressedBuffer;
   if (orientResult.rotation !== 0) {

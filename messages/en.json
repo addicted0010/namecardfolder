@@ -98,7 +98,9 @@
     "uploadOtherSide": "Upload other side (optional)",
     "processingFailed": "Image processing failed",
     "tryAgain": "Try again",
-    "uploadSuccess": "Card uploaded, recognizing in background"
+    "uploadSuccess": "Card uploaded, recognizing in background",
+    "source": "Source",
+    "sourcePlaceholder": "Where you got this card, e.g. XX exhibition"
   },
   "debug": {
     "viewLogs": "LLM Logs",

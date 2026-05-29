@@ -93,7 +93,7 @@ graph TD
 
 **功能：**
 - 左侧：名片正反面图片预览
-- 右侧：12 个字段的编辑表单 + 备注文本域
+- 右侧：12 个字段的编辑表单 + 备注文本域 + 来源文本域
 - 操作按钮：保存、删除、重新识别、查看日志
 - 自动识别：URL 带 `?autoRecognize=1` 时自动触发
 
@@ -159,6 +159,9 @@ idle → processing → front-done → processing-back → both-done
 - 拍照上传（移动端原生 camera input / 桌面端 webcam）
 - 图片预览 + 删除
 - 正反面双图上传
+- 来源输入框（textarea 2行高度，用于记录名片获取场合如展会名称）
+  - 数据保存到 Card.source 字段
+  - 上传后自动保存到 localStorage，下次打开时自动填入（方便展会连续扫描场景）
 - LLM 卡片检测（非名片时报错）
 - 错误提示 + 重试按钮
 

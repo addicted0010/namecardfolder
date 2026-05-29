@@ -98,7 +98,9 @@
     "uploadOtherSide": "上传另一面（可选）",
     "processingFailed": "图片处理失败",
     "tryAgain": "重试",
-    "uploadSuccess": "名片已上传，正在后台识别"
+    "uploadSuccess": "名片已上传，正在后台识别",
+    "source": "来源",
+    "sourcePlaceholder": "名片获取场合，如：xx展会"
   },
   "debug": {
     "viewLogs": "LLM 日志",

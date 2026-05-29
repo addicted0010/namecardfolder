@@ -95,6 +95,7 @@ export async function PUT(
       "department",
       "fax",
       "notes",
+      "source",
     ];
 
     const data: Record<string, string | null> = {};

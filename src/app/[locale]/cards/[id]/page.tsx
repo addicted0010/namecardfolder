@@ -37,6 +37,7 @@ interface CardData {
   department: string | null;
   fax: string | null;
   notes: string | null;
+  source: string | null;
   rawText: string | null;
   recognitionStatus: string;
   createdAt: string;
@@ -98,6 +99,7 @@ export default function CardDetailPage() {
         department: data.department || "",
         fax: data.fax || "",
         notes: data.notes || "",
+        source: data.source || "",
       });
     } catch {
       toast.error(tc("error"));
@@ -153,6 +155,7 @@ export default function CardDetailPage() {
         department: data.department || "",
         fax: data.fax || "",
         notes: data.notes || "",
+        source: data.source || "",
       });
       toast.success(t("recognizeSuccess"));
     } catch (e) {
@@ -296,6 +299,20 @@ export default function CardDetailPage() {
               value={form.notes || ""}
               onChange={(e) => setForm({ ...form, notes: e.target.value })}
               rows={3}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+            />
+          </div>
+
+          {/* Source */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              {t("source")}
+            </label>
+            <textarea
+              value={form.source || ""}
+              onChange={(e) => setForm({ ...form, source: e.target.value })}
+              rows={2}
+              placeholder={t("sourcePlaceholder")}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
             />
           </div>

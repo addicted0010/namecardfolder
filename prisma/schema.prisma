@@ -50,6 +50,7 @@ model Card {
   department        String?
   fax               String?
   notes             String?
+  source            String?
   rawText           String?
 
   recognitionStatus RecognitionStatus @default(PENDING)

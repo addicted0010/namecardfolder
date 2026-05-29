@@ -82,7 +82,7 @@ API 层使用 Next.js App Router 的 Route Handlers，所有 API 路由均在 `/
 | pageSize | number | 12 | 每页数量（最大 50） |
 
 **搜索字段**（不区分大小写 LIKE）：
-fullName、nameReading、company、title、email、phone、address、department、notes
+fullName、nameReading、company、title、email、phone、address、department、notes、source
 
 **响应：**
 ```json
@@ -112,7 +112,8 @@ fullName、nameReading、company、title、email、phone、address、department�
 ```json
 {
   "frontImageId": "clu...",  // 至少提供一个
-  "backImageId": "clu..."    // 可选
+  "backImageId": "clu...",   // 可选
+  "source": "xx展会"         // 可选，名片来源
 }
 ```
 
@@ -127,7 +128,7 @@ fullName、nameReading、company、title、email、phone、address、department�
 更新名片信息字段。
 
 **允许更新的字段：**
-fullName、nameReading、company、title、email、phone、mobilePhone、address、website、department、fax、notes
+fullName、nameReading、company、title、email、phone、mobilePhone、address、website、department、fax、notes、source
 
 **安全机制：**
 - 使用 `updateMany` + `where: { id, userId }` 双重验证

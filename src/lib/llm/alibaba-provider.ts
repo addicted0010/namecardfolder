@@ -227,7 +227,7 @@ export class AlibabaProvider implements LLMProvider {
     const requestBody = {
       model: this.model,
       messages: [{ role: "user", content }],
-      max_tokens: 256,
+      max_tokens: 200,
       enable_thinking: false,
     };
 

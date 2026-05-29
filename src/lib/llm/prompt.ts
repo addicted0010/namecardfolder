@@ -64,20 +64,30 @@ Respond ONLY with the JSON object, no additional text.`;
 
 export const CARD_ORIENTATION_PROMPT = `You are a business card orientation detection assistant.
 
-Analyze the provided business card image and determine its orientation relative to normal reading position (text should read left-to-right, top-to-bottom).
+Your task: Determine how many degrees the image must be rotated CLOCKWISE so that the text on the card reads normally (left-to-right, top-to-bottom) in standard landscape orientation.
+
+IMPORTANT FACTS about business cards:
+- Business cards are ALWAYS designed to be read in LANDSCAPE (horizontal) orientation
+- The card's width should be GREATER than its height when correctly oriented
+- ALL text (name, company, phone, email, address) should read horizontally from left to right
+- If you see text running vertically or the card appears taller than it is wide, it NEEDS rotation
 
 Return a JSON object:
 {
   "rotation": 0 | 90 | 180 | 270
 }
 
-Rules:
-- rotation: the degrees the image needs to be rotated CLOCKWISE to achieve correct orientation
-- 0 means the card is already correctly oriented (text reads normally)
-- 90 means the card needs to be rotated 90° clockwise (text is currently reading top-to-bottom on the left side)
-- 180 means the card is upside down
-- 270 means the card needs to be rotated 270° clockwise / 90° counter-clockwise (text is currently reading bottom-to-top on the right side)
-- Base your judgment on the text direction and content layout of the card
-- If uncertain, default to 0 (no rotation)
+How to determine rotation:
+- 0: Text already reads left-to-right horizontally, card is wider than tall. No rotation needed.
+- 90: The card appears TALLER than wide (portrait), and text reads from TOP to BOTTOM along what is currently the left edge. Rotate 90° clockwise to fix.
+- 180: The card is wider than tall BUT text is UPSIDE DOWN (readable only if you flip the image 180°). Rotate 180° to fix.
+- 270: The card appears TALLER than wide (portrait), and text reads from BOTTOM to TOP along what is currently the right edge. Rotate 270° clockwise to fix.
+
+Decision process:
+1. Look at the majority of text on the card (name, company name, address lines)
+2. Determine which direction this text flows
+3. If text is horizontal and readable → 0
+4. If text is horizontal but upside-down → 180
+5. If text is vertical (card is in portrait mode) → 90 or 270 depending on direction
 
 Respond ONLY with the JSON object, no additional text.`;

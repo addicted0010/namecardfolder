@@ -51,6 +51,7 @@ graph TB
 | department | String? | 部门 |
 | fax | String? | 传真 |
 | notes | String? | 备注 |
+| source | String? | 来源（名片获取场合，如展会名称） |
 | rawText | String? | OCR 原始文本 |
 | recognitionStatus | RecognitionStatus | 识别状态（枚举） |
 | viewedAt | DateTime? | 用户首次查看时间（null=未查看，用于 New 徽章） |

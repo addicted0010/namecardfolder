@@ -30,6 +30,7 @@ export async function GET(request: NextRequest) {
         { address: { contains: q, mode: "insensitive" } },
         { department: { contains: q, mode: "insensitive" } },
         { notes: { contains: q, mode: "insensitive" } },
+        { source: { contains: q, mode: "insensitive" } },
       ];
     }
 
@@ -65,7 +66,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { frontImageId, backImageId } = body;
+    const { frontImageId, backImageId, source } = body;
 
     if (!frontImageId && !backImageId) {
       throw new ApiError(400, "NO_IMAGES", "At least one image is required");
@@ -76,6 +77,7 @@ export async function POST(request: NextRequest) {
       data: {
         userId: auth.userId,
         recognitionStatus: "PENDING",
+        ...(source ? { source } : {}),
       },
       include: { images: true },
     });

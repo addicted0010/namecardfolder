@@ -14,7 +14,7 @@ interface UploadedImage {
 type Phase = "idle" | "processing" | "front-done" | "processing-back" | "both-done";
 
 interface CardUploadProps {
-  onUploadComplete: (frontId?: string, backId?: string) => void;
+  onUploadComplete: (frontId?: string, backId?: string, source?: string) => void;
   onClose: () => void;
 }
 
@@ -27,6 +27,13 @@ export function CardUpload({ onUploadComplete, onClose }: CardUploadProps) {
   const [backImage, setBackImage] = useState<UploadedImage | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [source, setSource] = useState("");
+
+  // Load source from localStorage on mount
+  useEffect(() => {
+    const saved = localStorage.getItem("cardUploadSource");
+    if (saved) setSource(saved);
+  }, []);
 
   // Camera state (desktop webcam modal)
   const [cameraOpen, setCameraOpen] = useState(false);
@@ -133,7 +140,9 @@ export function CardUpload({ onUploadComplete, onClose }: CardUploadProps) {
     if (!frontImage && !backImage) return;
     setSubmitting(true);
     try {
-      onUploadComplete(frontImage?.id, backImage?.id);
+      // Save source to localStorage for next upload
+      localStorage.setItem("cardUploadSource", source);
+      onUploadComplete(frontImage?.id, backImage?.id, source || undefined);
     } catch {
       setError(tc("error"));
       setSubmitting(false);
@@ -249,6 +258,17 @@ export function CardUpload({ onUploadComplete, onClose }: CardUploadProps) {
             <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded-lg">
               <X className="w-4 h-4 text-gray-400" />
             </button>
+          </div>
+          {/* Source input */}
+          <div>
+            <label className="block text-xs font-medium text-gray-500 mb-1">{t("source")}</label>
+            <textarea
+              value={source}
+              onChange={(e) => setSource(e.target.value)}
+              placeholder={t("sourcePlaceholder")}
+              rows={2}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+            />
           </div>
           {renderDropzone(getInitialRootProps(), getInitialInputProps(), isInitialDrag, "FRONT")}
           {error && (

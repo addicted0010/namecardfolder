@@ -65,14 +65,14 @@ export default function CardsPage() {
     fetchCards();
   }, [fetchCards]);
 
-  async function handleUploadComplete(frontId?: string, backId?: string) {
+  async function handleUploadComplete(frontId?: string, backId?: string, source?: string) {
     setCreating(true);
     try {
       // Create card with uploaded images (recognition is triggered automatically in background)
       const res = await fetch("/api/cards", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ frontImageId: frontId, backImageId: backId }),
+        body: JSON.stringify({ frontImageId: frontId, backImageId: backId, source }),
       });
 
       if (!res.ok) throw new Error("Failed to create card");

@@ -98,7 +98,9 @@
     "uploadOtherSide": "裏面をアップロード（任意）",
     "processingFailed": "画像処理に失敗しました",
     "tryAgain": "やり直す",
-    "uploadSuccess": "名刺をアップロードしました。バックグラウンドで認識中"
+    "uploadSuccess": "名刺をアップロードしました。バックグラウンドで認識中",
+    "source": "入手元",
+    "sourcePlaceholder": "名刺の入手場所、例：xx展示会"
   },
   "debug": {
     "viewLogs": "LLM ログ",
