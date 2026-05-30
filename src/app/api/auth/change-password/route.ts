@@ -28,14 +28,18 @@ export async function POST(request: NextRequest) {
       throw new ApiError(404, "USER_NOT_FOUND", "User not found");
     }
 
-    const valid = await verifyPassword(currentPassword, user.passwordHash);
-    if (!valid) {
-      throw new ApiError(401, "CURRENT_PASSWORD_WRONG", "Current password is incorrect");
-    }
+    // For Google-only users setting password for the first time,
+    // skip current password verification
+    if (user.passwordHash) {
+      const valid = await verifyPassword(currentPassword, user.passwordHash);
+      if (!valid) {
+        throw new ApiError(401, "CURRENT_PASSWORD_WRONG", "Current password is incorrect");
+      }
 
-    const isSame = await verifyPassword(newPassword, user.passwordHash);
-    if (isSame) {
-      throw new ApiError(400, "SAME_PASSWORD", "New password cannot be the same as current password");
+      const isSame = await verifyPassword(newPassword, user.passwordHash);
+      if (isSame) {
+        throw new ApiError(400, "SAME_PASSWORD", "New password cannot be the same as current password");
+      }
     }
 
     const newHash = await hashPassword(newPassword);

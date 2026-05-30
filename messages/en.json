@@ -44,7 +44,10 @@
     "confirmNewPassword": "Confirm New Password",
     "changePasswordSuccess": "Password changed, please log in again",
     "currentPasswordWrong": "Current password is incorrect",
-    "newPasswordSameAsOld": "New password cannot be the same as current password"
+    "newPasswordSameAsOld": "New password cannot be the same as current password",
+    "signInWithGoogle": "Sign in with Google",
+    "orContinueWith": "or",
+    "googleOnlyAccount": "This account uses Google sign-in. Please use the Google button below."
   },
   "cards": {
     "title": "Business Cards",
@@ -120,5 +123,87 @@
     "en": "English",
     "zh": "中文",
     "ja": "日本語"
+  },
+  "privacy": {
+    "title": "Privacy Policy",
+    "lastUpdated": "Last Updated: {date}",
+    "intro": {
+      "title": "1. Introduction",
+      "content": "Welcome to CardVault. We value your privacy and this Privacy Policy explains how we collect, use, and protect your personal information."
+    },
+    "collect": {
+      "title": "2. Information We Collect",
+      "content": "When you use our service, we may collect the following information:",
+      "item1": "Google account information (name, email, profile picture)",
+      "item2": "Business card data you upload and create",
+      "item3": "Basic technical information when using the service"
+    },
+    "usage": {
+      "title": "3. How We Use Information",
+      "content": "We use the collected information to:",
+      "item1": "Provide and maintain our service",
+      "item2": "Improve user experience",
+      "item3": "Send service-related notifications"
+    },
+    "sharing": {
+      "title": "4. Information Sharing",
+      "content": "We do not sell, trade, or transfer your personal information to third parties. We only disclose your information when required by law or to protect our rights."
+    },
+    "security": {
+      "title": "5. Data Security",
+      "content": "We employ industry-standard security measures to protect your personal information. Your data is stored on secure servers and transmitted through encrypted connections."
+    },
+    "rights": {
+      "title": "6. Your Rights",
+      "content": "You have the right to access, correct, or delete your personal information. To exercise these rights, please use the settings function within the app or contact us."
+    },
+    "cookies": {
+      "title": "7. Cookie Usage",
+      "content": "We use cookies and similar technologies to maintain your login status and improve service experience. You can manage cookie preferences in your browser settings."
+    },
+    "changes": {
+      "title": "8. Policy Changes",
+      "content": "We may update this Privacy Policy from time to time. For significant changes, we will notify you through appropriate means. Continued use of the service indicates your acceptance of the updated policy."
+    }
+  },
+  "terms": {
+    "title": "Terms of Service",
+    "lastUpdated": "Last Updated: {date}",
+    "acceptance": {
+      "title": "1. Acceptance of Terms",
+      "content": "Welcome to CardVault. By using our service, you agree to comply with these Terms of Service. If you do not agree with these terms, please do not use our service."
+    },
+    "description": {
+      "title": "2. Service Description",
+      "content": "CardVault is a business card management application that helps users digitize, organize, and search business card information. We reserve the right to modify or terminate the service (or any part thereof) at any time."
+    },
+    "responsibilities": {
+      "title": "3. User Responsibilities",
+      "content": "When using our service, you agree to:",
+      "item1": "Provide accurate and complete account information",
+      "item2": "Maintain account security and be responsible for all activities under your account",
+      "item3": "Not abuse the service or engage in illegal activities",
+      "item4": "Respect other users and our service"
+    },
+    "ip": {
+      "title": "4. Intellectual Property",
+      "content": "The service and its original content, features, and functionality are owned by CardVault and protected by international copyright laws. The business card data you create belongs to you."
+    },
+    "disclaimer": {
+      "title": "5. Disclaimer",
+      "content": "The service is provided \"as is\" without any warranties, express or implied. We do not guarantee that the service will be uninterrupted or error-free. You use the service at your own risk."
+    },
+    "liability": {
+      "title": "6. Limitation of Liability",
+      "content": "To the maximum extent permitted by law, CardVault and its affiliates shall not be liable for any indirect, incidental, special, consequential, or punitive damages."
+    },
+    "termination": {
+      "title": "7. Account Termination",
+      "content": "We reserve the right to suspend or terminate your account at any time if you violate these terms. You may also choose to stop using our service at any time."
+    },
+    "changes": {
+      "title": "8. Changes to Terms",
+      "content": "We may modify these Terms of Service from time to time. For significant changes, we will notify you in advance. Continued use of the service indicates your acceptance of the modified terms."
+    }
   }
 }

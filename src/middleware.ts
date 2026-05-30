@@ -19,8 +19,8 @@ async function verifyJWT(token: string): Promise<boolean> {
 
 const intlMiddleware = createMiddleware(routing);
 
-const PUBLIC_PATHS = ["/login", "/register"];
-const API_PUBLIC_PATHS = ["/api/auth/login", "/api/auth/register", "/api/cron/"];
+const PUBLIC_PATHS = ["/login", "/register", "/privacy-policy", "/terms-of-service"];
+const API_PUBLIC_PATHS = ["/api/auth/login", "/api/auth/register", "/api/auth/google", "/api/cron/"];
 
 export default async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;

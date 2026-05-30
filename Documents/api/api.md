@@ -11,10 +11,12 @@ API 层使用 Next.js App Router 的 Route Handlers，所有 API 路由均在 `/
 | 方法 | 路径 | 说明 | 认证 |
 |------|------|------|------|
 | POST | `/api/auth/register` | ~~用户注册~~（已禁用，返回 403） | 否 |
-| POST | `/api/auth/login` | 用户登录 | 否 |
+| POST | `/api/auth/login` | 用户密码登录 | 否 |
 | POST | `/api/auth/logout` | 用户登出 | 是 |
 | GET | `/api/auth/me` | 获取当前用户 | 是 |
 | POST | `/api/auth/change-password` | 修改密码 | 是 |
+| GET | `/api/auth/google` | 发起 Google OAuth 流程 | 否 |
+| GET | `/api/auth/google/callback` | Google OAuth 回调 | 否 |
 | GET | `/api/cards` | 名片列表（分页+搜索） | 是 |
 | POST | `/api/cards` | 创建名片（自动触发后台识别） | 是 |
 | GET | `/api/cards/[id]` | 获取名片详情 | 是 |
@@ -67,6 +69,8 @@ API 层使用 Next.js App Router 的 Route Handlers，所有 API 路由均在 `/
 - `INTERNAL_ERROR` — 服务器内部错误（500）
 - `CURRENT_PASSWORD_WRONG` — 当前密码错误（401）
 - `SAME_PASSWORD` — 新密码与当前密码相同（400）
+- `GOOGLE_ONLY_ACCOUNT` — 该账号仅支持 Google 登录（401）
+- `CONFIG_ERROR` — 服务端配置错误（500）
 
 ## 详细接口文档
 

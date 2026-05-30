@@ -26,12 +26,18 @@ graph TB
 | id | String (cuid) | 主键 |
 | username | String | 唯一用户名 |
 | email | String? | 可选邮箱（唯一） |
-| passwordHash | String | bcrypt 加密密码 |
+| passwordHash | String? | bcrypt 加密密码（Google 用户可为 null） |
+| googleId | String? | Google OAuth 唯一标识（唯一） |
 | displayName | String? | 显示名称 |
 | createdAt | DateTime | 创建时间 |
 | updatedAt | DateTime | 更新时间 |
 
 索引：`@@index([username])`
+
+**用户来源**：
+- 密码注册用户：有 `passwordHash`，无 `googleId`
+- Google 登录用户：有 `googleId`，无 `passwordHash`
+- 已关联用户：同时有 `passwordHash` 和 `googleId`（支持两种方式登录）
 
 ### Card（名片）
 

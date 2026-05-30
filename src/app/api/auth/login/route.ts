@@ -17,6 +17,11 @@ export async function POST(request: NextRequest) {
       throw new ApiError(401, "INVALID_CREDENTIALS", "Invalid username or password");
     }
 
+    // User registered via Google only (no password set)
+    if (!user.passwordHash) {
+      throw new ApiError(401, "GOOGLE_ONLY_ACCOUNT", "This account uses Google sign-in. Please use the Google login button.");
+    }
+
     const valid = await verifyPassword(password, user.passwordHash);
     if (!valid) {
       throw new ApiError(401, "INVALID_CREDENTIALS", "Invalid username or password");

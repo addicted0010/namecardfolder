@@ -21,7 +21,25 @@ graph TB
     Content --> CardsPage[名片列表 /cards]
     Content --> CardDetail[名片详情 /cards/id]
     Content --> LoginPage[登录 /login]
+    Content --> PrivacyPage[隐私政策 /privacy-policy]
+    Content --> TermsPage[服务条款 /terms-of-service]
 ```
+
+## 登录页面 (`/login/page.tsx`)
+
+支持两种登录方式：
+1. **用户名 + 密码**：传统表单提交到 `/api/auth/login`
+2. **Google 登录**：点击按钮调用 `/api/auth/google` 获取授权 URL，跳转到 Google 授权页
+
+**UI 结构：**
+- 顶部 Logo + 标题
+- 用户名/密码输入表单 + 登录按钮
+- 分隔线（"或"）
+- Google 登录按钮（含 Google 品牌 SVG 图标）
+
+**Google 登录特殊处理：**
+- 纯 Google 用户尝试密码登录时，显示 `googleOnlyAccount` 提示
+- Google 登录按钮支持 loading 状态
 
 ## 布局层级
 
@@ -193,6 +211,16 @@ idle → processing → front-done → processing-back → both-done
 ### LocaleSwitcher
 
 语言切换下拉菜单，支持 en / zh / ja 三种语言。
+
+## 静态页面
+
+### 隐私政策页 (`/privacy-policy/page.tsx`)
+
+公开访问（无需登录），展示 CardVault 的隐私政策内容。使用 `useTranslations("privacy")` 获取翻译，支持 en/zh/ja 三语。
+
+### 服务条款页 (`/terms-of-service/page.tsx`)
+
+公开访问（无需登录），展示 CardVault 的服务条款内容。使用 `useTranslations("terms")` 获取翻译，支持 en/zh/ja 三语。
 
 ## 国际化
 

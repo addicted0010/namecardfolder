@@ -13,7 +13,7 @@ CardVault 是一个基于 AI 的名片管理 Web 应用，支持用户上传名�
 | 语言 | TypeScript |
 | 数据库 | PostgreSQL (Neon serverless) |
 | ORM | Prisma v7 |
-| 认证 | JWT (jose) + HttpOnly Cookie |
+| 认证 | JWT (jose) + HttpOnly Cookie + Google OAuth 2.0 |
 | 文件存储 | 本地文件系统 / 阿里云 OSS (STS 临时令牌) / Vercel Blob (备选) |
 | AI 识别 | Claude API / 阿里巴巴通义千问 API |
 | 国际化 | next-intl |
@@ -89,7 +89,7 @@ src/
 | 模块 | 文档 | 职责 |
 |------|------|------|
 | 数据库 | [database.md](./database/database.md) | 数据模型、关系、索引 |
-| 认证 | [auth.md](./auth/auth.md) | 用户登录、JWT、中间件保护（注册已禁用） |
+| 认证 | [auth.md](./auth/auth.md) | 用户登录（密码/Google OAuth）、JWT、中间件保护 |
 | 存储 | [storage.md](./storage/storage.md) | 文件上传/删除、私有访问代理 |
 | LLM | [llm.md](./llm/llm.md) | AI 名片识别、卡片检测、后台识别队列 |
 | API | [api.md](./api/api.md) | RESTful API 路由设计 |
