@@ -47,7 +47,7 @@ export function Header() {
         <div className="flex items-center justify-between h-14">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2 font-bold text-lg text-gray-900">
-            <Image src="/icon.png" alt="CardVault" width={24} height={24} className="w-6 h-6" />
+            <Image src="/logo.png" alt="CardVault" width={96} height={96} className="w-7 h-7" />
             <span>CardVault</span>
             <span className="text-xs font-normal text-gray-400 tracking-wide">
               v{process.env.NEXT_PUBLIC_APP_VERSION}
