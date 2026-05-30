@@ -30,34 +30,35 @@
    - **外部（External）**：适用于任何 Google 账号用户（推荐）
    - **内部（Internal）**：仅限 Google Workspace 组织内部用户
 3. 点击 **"创建"（Create）**
-4. 填写应用信息：
+4. 在左侧导航栏点击 **"Branding"**（品牌信息）
+5. 填写应用信息：
    - **应用名称**：`CardVault`
    - **用户支持电子邮件**：选择你的邮箱
    - **应用徽标**：可选，可上传项目 Logo
-5. 填写 **应用域名**（App Domain）部分：
+6. 填写 **应用域名**（App Domain）部分：
    - **应用首页链接**：`https://你的域名`（如 `https://cardvault.example.com`）
-   - **应用隐私权政策链接**：可暂时留空
-   - **应用服务条款链接**：可暂时留空
-6. 填写 **开发者联系信息**：
+   - **应用隐私权政策链接**：`https://你的域名/privacy-policy`
+   - **应用服务条款链接**：`https://你的域名/terms-of-service`
+7. 填写 **开发者联系信息**：
    - 输入你的邮箱地址
-7. 点击 **"保存并继续"（Save and Continue）**
+8. 点击 **"保存"（Save）**
 
-### 配置 Scopes（权限范围）
+### 配置 Data Access（数据访问权限）
 
-8. 在 Scopes 页面，点击 **"添加或移除范围"（Add or Remove Scopes）**
-9. 搜索并勾选以下范围：
-   - `openid` — 基础身份认证
-   - `email` — 获取用户邮箱
-   - `profile` — 获取用户基本资料（名称、头像等）
-10. 点击 **"更新"（Update）**
-11. 点击 **"保存并继续"（Save and Continue）**
+9. 在左侧导航栏点击 **"Data access"**
+10. 点击 **"Add or remove scopes"** 按钮
+11. 在右侧弹出的 "Update selected scopes" 面板中，勾选以下三项：
+    - `.../auth/userinfo.email` — See your primary Google Account email address
+    - `.../auth/userinfo.profile` — See your personal info, including any personal info you've made publicly available
+    - `openid` — Associate you with your personal info on Google
+12. 点击 **"Save"**
 
 ### 添加测试用户（仅在外部模式未发布时需要）
 
-12. 在 "测试用户" 页面，点击 **"添加用户"（Add Users）**
-13. 输入你要用来测试的 Google 邮箱地址
-14. 点击 **"添加"（Add）**
-15. 点击 **"保存并继续"（Save and Continue）**
+13. 在左侧导航栏点击 **"Audience"**
+14. 点击 **"Add users"** 按钮
+15. 输入你要用来测试的 Google 邮箱地址
+16. 点击 **"Save"**
 
 > **注意**：在应用发布（Published）之前，只有添加为测试用户的 Google 账号才能使用 OAuth 登录。
 
@@ -126,10 +127,10 @@ GOOGLE_REDIRECT_URI=http://localhost:3000/api/auth/google/callback
 
 ## 第五步：发布应用（可选）
 
-如果需要所有 Google 用户都能登录（而不仅限于测试用户），需要发布 OAuth 同意屏幕：
+如果需要所有 Google 用户都能登录（而不仅限于测试用户），需要发布应用：
 
-1. 返回 **"OAuth 同意屏幕"** 页面
-2. 点击 **"发布应用"（Publish App）**
+1. 在左侧导航栏点击 **"Audience"**
+2. 点击 **"Publish App"**
 3. 确认发布
 
 > **注意**：如果应用请求的权限仅限于 `openid`、`email`、`profile`（非敏感权限），则无需通过 Google 的审核验证流程，发布后立即生效。
