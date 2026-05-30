@@ -5,7 +5,8 @@ import { Link } from "@/i18n/navigation";
 import { useAuth } from "@/contexts/auth-context";
 import { LocaleSwitcher } from "./locale-switcher";
 import { useState, useRef, useEffect } from "react";
-import { LogOut, User, CreditCard, KeyRound } from "lucide-react";
+import { LogOut, User, KeyRound } from "lucide-react";
+import Image from "next/image";
 import { useRouter } from "@/i18n/navigation";
 import { ChangePasswordModal } from "@/components/auth/change-password-modal";
 
@@ -45,8 +46,8 @@ export function Header() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-14">
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-2 font-bold text-lg text-blue-600">
-            <CreditCard className="w-5 h-5" />
+          <Link href="/" className="flex items-center gap-2 font-bold text-lg text-gray-900">
+            <Image src="/icon.png" alt="CardVault" width={24} height={24} className="w-6 h-6" />
             <span>CardVault</span>
             <span className="text-xs font-normal text-gray-400 tracking-wide">
               v{process.env.NEXT_PUBLIC_APP_VERSION}
