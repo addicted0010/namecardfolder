@@ -103,7 +103,9 @@
     "tryAgain": "やり直す",
     "uploadSuccess": "名刺をアップロードしました。バックグラウンドで認識中",
     "source": "入手元",
-    "sourcePlaceholder": "名刺の入手場所、例：xx展示会"
+    "sourcePlaceholder": "名刺の入手場所、例：xx展示会",
+    "changeSource": "入手元を変更",
+    "sourceSettingSaved": "入手元設定を保存しました"
   },
   "debug": {
     "viewLogs": "LLM ログ",

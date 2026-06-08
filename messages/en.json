@@ -103,7 +103,9 @@
     "tryAgain": "Try again",
     "uploadSuccess": "Card uploaded, recognizing in background",
     "source": "Source",
-    "sourcePlaceholder": "Where you got this card, e.g. XX exhibition"
+    "sourcePlaceholder": "Where you got this card, e.g. XX exhibition",
+    "changeSource": "Change Source",
+    "sourceSettingSaved": "Source setting saved"
   },
   "debug": {
     "viewLogs": "LLM Logs",
