@@ -4,6 +4,7 @@ import { useState, useCallback, useRef, useEffect } from "react";
 import { useTranslations } from "next-intl";
 import { Upload, X, Loader2, Camera, FlipHorizontal, RefreshCw, Plus } from "lucide-react";
 import { useDropzone } from "react-dropzone";
+import { compressImage } from "@/lib/client-image-compress";
 
 interface UploadedImage {
   id: string;
@@ -45,8 +46,11 @@ export function CardUpload({ onUploadComplete, onClose }: CardUploadProps) {
 
   // Upload a file to the server (includes LLM processing)
   async function uploadFile(file: File, side: "FRONT" | "BACK"): Promise<UploadedImage> {
+    // Compress image client-side before upload
+    const compressedFile = await compressImage(file);
+
     const formData = new FormData();
-    formData.append("file", file);
+    formData.append("file", compressedFile);
     formData.append("side", side);
 
     const res = await fetch("/api/upload", { method: "POST", body: formData });
