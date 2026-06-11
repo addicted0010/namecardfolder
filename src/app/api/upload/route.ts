@@ -5,6 +5,14 @@ import { prisma } from "@/lib/prisma";
 import { apiResponse, apiError, ApiError } from "@/lib/utils";
 import sharp from "sharp";
 
+export const config = {
+  api: {
+    bodyParser: {
+      sizeLimit: "10mb",
+    },
+  },
+};
+
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/heic", "image/webp", "image/heif"];
 
