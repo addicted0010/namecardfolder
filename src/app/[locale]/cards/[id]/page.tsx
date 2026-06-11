@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import { useParams, useSearchParams } from "next/navigation";
 import { useRouter } from "@/i18n/navigation";
 import { toast } from "sonner";
+import { useAuth } from "@/contexts/auth-context";
 import {
   ArrowLeft,
   Loader2,
@@ -49,6 +50,7 @@ export default function CardDetailPage() {
   const t = useTranslations("cards");
   const tc = useTranslations("common");
   const td = useTranslations("debug");
+  const { user } = useAuth();
   const params = useParams();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -223,13 +225,15 @@ export default function CardDetailPage() {
           {tc("back")}
         </button>
         <div className="flex items-center gap-2">
-          <button
-            onClick={() => setShowLogs(true)}
-            className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 flex items-center gap-1.5"
-          >
-            <FileText className="w-4 h-4" />
-            {td("viewLogs")}
-          </button>
+          {user?.isAdmin && (
+            <button
+              onClick={() => setShowLogs(true)}
+              className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 flex items-center gap-1.5"
+            >
+              <FileText className="w-4 h-4" />
+              {td("viewLogs")}
+            </button>
+          )}
           <button
             onClick={handleRecognize}
             disabled={recognizing || card.images.length === 0}

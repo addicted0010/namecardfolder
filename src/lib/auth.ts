@@ -96,6 +96,7 @@ export async function getCurrentUser() {
       username: true,
       email: true,
       displayName: true,
+      isAdmin: true,
       createdAt: true,
     },
   });

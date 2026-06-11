@@ -25,6 +25,7 @@ async function main() {
         username,
         passwordHash,
         displayName,
+        isAdmin: true,
       },
     });
 

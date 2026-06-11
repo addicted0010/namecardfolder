@@ -25,6 +25,7 @@ model User {
   passwordHash String?
   googleId     String?  @unique
   displayName  String?
+  isAdmin      Boolean  @default(false)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
