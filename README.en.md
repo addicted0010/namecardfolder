@@ -14,6 +14,7 @@
 - **Extract contact fields automatically**: AI reads names, companies, titles, emails, phone numbers, addresses, websites, departments, fax numbers, and Japanese furigana (ふりがな).
 - **Remember where you met**: Set an occasion/source once, then every card scanned at the same event gets the same searchable context.
 - **Find people later**: Search by name, company, phone, email, source, or notes.
+- **Daily fair-use credits**: Regular accounts receive 100 credits per day; a front-only card costs 1 credit and a front/back card costs 2 credits. Admin accounts are unlimited.
 - **Work across languages and devices**: 中文 / English / 日本語 UI, responsive on mobile and desktop.
 
 ## Try It Locally in 3 Minutes
@@ -67,7 +68,7 @@ For the full Vercel, Neon, OSS, and Google OAuth walkthrough, see [DEPLOY.en.md]
 1. Sign in and open the card list.
 2. Tap the bottom-right `+`; optionally set the event/source, such as “2026-06-13 Starbucks Oimachi”.
 3. Upload or take a photo of the card front; add the back side if available.
-4. AI recognizes the card in the background, so you can keep adding more cards without waiting.
+4. Finishing the upload spends daily credits based on the number of sides, then AI recognizes the card in the background so you can keep adding more cards without waiting.
 5. Open a card to review and edit extracted fields.
 6. Search later by name, company, phone, email, source, or notes.
 
@@ -81,6 +82,7 @@ For the full Vercel, Neon, OSS, and Google OAuth walkthrough, see [DEPLOY.en.md]
 | `LLM_PROVIDER` | `claude` or `alibaba` |
 | `CLAUDE_API_KEY` / `ALIBABA_API_KEY` | AI provider API key |
 | `STORAGE_PROVIDER` | `local` / `aliyun-oss` / `vercel` |
+| `CREDIT_TIME_ZONE` | Time zone for daily credit reset; defaults to `Asia/Tokyo` |
 | `NEXT_PUBLIC_APP_URL` | Public app URL |
 
 See [DEPLOY.en.md](./DEPLOY.en.md) for all configuration options.

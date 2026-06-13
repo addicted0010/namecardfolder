@@ -61,6 +61,7 @@ src/
 │   ├── api/                   # API 路由
 │   │   ├── auth/              # 认证 API
 │   │   ├── cards/             # 名片 CRUD API
+│   │   ├── credits/           # 每日 credit 状态 API
 │   │   ├── images/            # 图片代理 API
 │   │   ├── llm-logs/          # LLM 日志 API
 │   │   └── upload/            # 图片上传 API
@@ -77,6 +78,7 @@ src/
 │   ├── llm/                   # LLM 调用封装
 │   ├── storage/               # 存储抽象层
 │   ├── auth.ts                # 认证工具
+│   ├── credits.ts             # 每日 credit 配额与原子预扣
 │   ├── image-processing.ts    # 图片处理（含压缩优化）
 │   ├── prisma.ts              # Prisma 客户端
 │   ├── recognition-queue.ts   # 识别队列调度
@@ -103,15 +105,16 @@ src/
 graph LR
     A[用户选择图片] --> B[上传 /api/upload]
     B --> C[图片预处理 Sharp]
-    C --> D[LLM 卡片检测]
-    D -->|是名片| E[裁剪+压缩+存储]
-    D -->|非名片| F[拒绝上传]
-    E --> G[创建 Card /api/cards POST]
-    G --> H[返回前端 刷新列表]
-    G --> I[after 触发识别队列]
-    I --> J[processRecognitionQueue]
-    J --> K[LLM 文字识别]
-    K --> L[更新 Card 字段 + 状态]
+    C --> D[创建 CardImage 孤儿图片]
+    D --> E[创建 Card /api/cards POST]
+    E --> F[按图片面数预扣每日 credit]
+    F -->|额度足够| G[关联 CardImage]
+    F -->|额度不足| H[拒绝创建]
+    G --> I[返回前端 刷新列表]
+    G --> J[after 触发识别队列]
+    J --> K[processRecognitionQueue]
+    K --> L[LLM 卡片检测 + 朝向检测 + 文字识别]
+    L --> M[更新 Card 字段 + 状态]
 ```
 
 ### 图片访问流程（私有模式）
@@ -137,4 +140,5 @@ graph LR
 2. **分层架构**：API 路由 → 业务逻辑（lib/）→ 数据层（Prisma）
 3. **安全优先**：JWT HttpOnly Cookie、私有存储（OSS/Blob）、资源归属校验
 4. **多租户隔离**：所有数据操作均带 `userId` 过滤，确保用户只能访问自己的数据
-5. **优雅降级**：LLM 错误时记录日志并标记状态为 FAILED，不中断主流程
+5. **成本保护**：普通用户每日 100 credit，创建名片时按单面/双面原子预扣，限制免费开放时的 LLM 消耗
+6. **优雅降级**：LLM 错误时记录日志并标记状态为 FAILED，不中断主流程

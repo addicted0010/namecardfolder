@@ -4,6 +4,11 @@ import { prisma } from "@/lib/prisma";
 import { apiResponse, apiError, ApiError, paginate } from "@/lib/utils";
 import { processRecognitionQueue } from "@/lib/recognition-queue";
 import { AliyunOSSProvider } from "@/lib/storage/aliyun-oss";
+import {
+  DailyCreditLimitExceededError,
+  getCreditCostForImageIds,
+  reserveDailyCredits,
+} from "@/lib/credits";
 
 export async function GET(request: NextRequest) {
   try {
@@ -72,28 +77,44 @@ export async function POST(request: NextRequest) {
       throw new ApiError(400, "NO_IMAGES", "At least one image is required");
     }
 
-    // Create card
-    const card = await prisma.card.create({
-      data: {
-        userId: auth.userId,
-        recognitionStatus: "PENDING",
-        ...(source ? { source } : {}),
-      },
-      include: { images: true },
-    });
+    const imageIds = [...new Set([frontImageId, backImageId].filter(Boolean) as string[])];
+    const requiredCredits = getCreditCostForImageIds(imageIds);
 
-    // Associate images with card
-    const imageIds = [frontImageId, backImageId].filter(Boolean);
-    if (imageIds.length > 0) {
-      await prisma.cardImage.updateMany({
+    const { card, creditStatus } = await prisma.$transaction(async (tx) => {
+      const images = await tx.cardImage.findMany({
+        where: { id: { in: imageIds }, cardId: null },
+        select: { id: true },
+      });
+
+      if (images.length !== imageIds.length) {
+        throw new ApiError(400, "INVALID_IMAGES", "One or more images are invalid or already used");
+      }
+
+      const creditStatus = await reserveDailyCredits(auth.userId, requiredCredits, tx);
+
+      const card = await tx.card.create({
+        data: {
+          userId: auth.userId,
+          recognitionStatus: "PENDING",
+          ...(source ? { source } : {}),
+        },
+      });
+
+      await tx.cardImage.updateMany({
         where: { id: { in: imageIds }, cardId: null },
         data: { cardId: card.id },
       });
-    }
 
-    const updatedCard = await prisma.card.findUnique({
-      where: { id: card.id },
-      include: { images: true },
+      const updatedCard = await tx.card.findUnique({
+        where: { id: card.id },
+        include: { images: true },
+      });
+
+      if (!updatedCard) {
+        throw new ApiError(500, "CARD_CREATE_FAILED", "Failed to create card");
+      }
+
+      return { card: updatedCard, creditStatus };
     });
 
     // Trigger background recognition after response is sent
@@ -101,8 +122,17 @@ export async function POST(request: NextRequest) {
       await processRecognitionQueue();
     });
 
-    return apiResponse(updatedCard, 201);
+    return apiResponse({ ...card, creditStatus }, 201);
   } catch (error) {
+    if (error instanceof DailyCreditLimitExceededError) {
+      return apiError(
+        new ApiError(
+          429,
+          "DAILY_CREDIT_LIMIT_EXCEEDED",
+          `Daily credit limit exceeded. Remaining: ${error.status.remaining ?? 0}, required: ${error.requiredCredits}.`
+        )
+      );
+    }
     return apiError(error);
   }
 }

@@ -105,7 +105,10 @@
     "source": "来源",
     "sourcePlaceholder": "名片获取场合，如：xx展会",
     "changeSource": "更改来源",
-    "sourceSettingSaved": "来源设置已保存"
+    "sourceSettingSaved": "来源设置已保存",
+    "creditsRemaining": "今日 credit：剩余 {remaining}/{limit}",
+    "creditsUnlimited": "今日 credit：无限制",
+    "creditLimitExceeded": "今日 credit 已用完。如果需要更高额度，请联系服务提供者。"
   },
   "debug": {
     "viewLogs": "LLM 日志",

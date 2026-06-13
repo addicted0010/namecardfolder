@@ -12,6 +12,7 @@
 graph TB
     User[User 用户] -->|1:N| Card[Card 名片]
     User -->|1:N| LlmLog[LlmLog 调用日志]
+    User -->|1:N| UserDailyCreditUsage[UserDailyCreditUsage 每日 credit 用量]
     Card -->|1:N| CardImage[CardImage 名片图片]
     Card -->|1:N| LlmLog
     SystemConfig[SystemConfig 系统配置]
@@ -35,10 +36,32 @@ graph TB
 
 索引：`@@index([username])`
 
+关系：
+- `Card[]` → 一对多
+- `LlmLog[]` → 一对多
+- `UserDailyCreditUsage[]` → 一对多
+
 **用户来源**：
 - 密码注册用户：有 `passwordHash`，无 `googleId`
 - Google 登录用户：有 `googleId`，无 `passwordHash`
 - 已关联用户：同时有 `passwordHash` 和 `googleId`（支持两种方式登录）
+
+### UserDailyCreditUsage（用户每日 credit 用量）
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| id | String (cuid) | 主键 |
+| userId | String | 所属用户 (FK → User.id) |
+| date | DateTime @db.Date | credit 日期（由 `CREDIT_TIME_ZONE` 计算，默认 Asia/Tokyo） |
+| creditsUsed | Int | 当日已使用 credit |
+| createdAt | DateTime | 创建时间 |
+| updatedAt | DateTime | 更新时间 |
+
+索引：
+- `@@unique([userId, date])`：确保每个用户每天只有一条用量记录
+- `@@index([date])`
+
+**设计要点**：普通用户每天默认 100 credit。创建名片时按实际关联图片数量原子预扣：单面 1 credit，双面 2 credit。管理员 `isAdmin=true` 不受限制。
 
 ### Card（名片）
 
@@ -127,6 +150,7 @@ graph TB
 **当前配置项**：
 - `recognition_max_concurrency`：识别队列最大并发数（默认 "5"）
 - `recognition_min_interval_ms`：识别请求最小间隔毫秒数（默认 "100"）
+- `daily_credit_limit`：普通用户每日 credit 上限（默认 "100"）
 
 ## 枚举类型
 
@@ -148,8 +172,9 @@ graph TB
 
 ## 数据生命周期
 
-1. **上传**：用户上传图片 → CardImage（cardId=null）→ 创建 Card → 关联 CardImage
-2. **识别**：后台队列自动触发 → 调用 LLM → 写入 LlmLog → 更新 Card 字段 → 状态变为 SUCCESS/FAILED
-3. **查看**：用户首次打开 Card 详情 → 更新 viewedAt（清除 New 标记）
-4. **删除**：删除 Card → 级联删除 CardImage（数据库级）+ 删除存储文件（应用层）
-5. **用户删除**：级联删除所有 Card → 进而级联删除所有 CardImage 和 LlmLog
+1. **上传**：用户上传图片 → CardImage（cardId=null）
+2. **创建名片**：创建 Card 前按图片面数预扣 `UserDailyCreditUsage.creditsUsed` → 关联 CardImage
+3. **识别**：后台队列自动触发 → 调用 LLM → 写入 LlmLog → 更新 Card 字段 → 状态变为 SUCCESS/FAILED
+4. **查看**：用户首次打开 Card 详情 → 更新 viewedAt（清除 New 标记）
+5. **删除**：删除 Card → 级联删除 CardImage（数据库级）+ 删除存储文件（应用层）
+6. **用户删除**：级联删除所有 Card、LlmLog 和 UserDailyCreditUsage

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useTranslations } from "next-intl";
 import { X, Copy, Check, ChevronDown, ChevronRight, Loader2 } from "lucide-react";
 
@@ -35,11 +35,7 @@ export function LlmLogViewer({ cardId, onClose }: LlmLogViewerProps) {
   const [loadingDetail, setLoadingDetail] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  useEffect(() => {
-    fetchLogs();
-  }, [cardId]);
-
-  async function fetchLogs() {
+  const fetchLogs = useCallback(async () => {
     try {
       const res = await fetch(`/api/llm-logs?cardId=${cardId}`);
       if (!res.ok) throw new Error("Failed to fetch logs");
@@ -50,7 +46,12 @@ export function LlmLogViewer({ cardId, onClose }: LlmLogViewerProps) {
     } finally {
       setLoading(false);
     }
-  }
+  }, [cardId]);
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    fetchLogs();
+  }, [fetchLogs]);
 
   async function fetchDetail(id: string) {
     if (expandedId === id) {

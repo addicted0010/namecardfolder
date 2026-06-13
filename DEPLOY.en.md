@@ -183,6 +183,7 @@ In **Settings → Environment Variables** of the Vercel project, add:
 | `GOOGLE_CLIENT_ID` | OAuth client ID | Google OAuth (optional) |
 | `GOOGLE_CLIENT_SECRET` | OAuth client secret (mark as Sensitive) | Google OAuth (optional) |
 | `GOOGLE_REDIRECT_URI` | `https://yourdomain.com/api/auth/google/callback` | Google OAuth (optional) |
+| `CREDIT_TIME_ZONE` | `Asia/Tokyo` | Daily credit reset time zone (optional, defaults to `Asia/Tokyo`) |
 | `NEXT_PUBLIC_APP_URL` | Your production domain (e.g. `https://cardvault.example.com`) | Public app URL |
 
 > **Tip**: Vercel Postgres injects database variables automatically. OSS, LLM, and Google OAuth variables must be added manually.
@@ -387,6 +388,7 @@ npx tsx scripts/migrate-blob-to-oss.ts
 
 | Variable | Description | Example |
 |----------|-------------|---------|
+| `CREDIT_TIME_ZONE` | Time zone for daily credit resets. Regular users get 100 credits per day; a front-only card costs 1 credit and a front/back card costs 2 credits. Admin accounts are unlimited | `Asia/Tokyo` |
 | `NEXT_PUBLIC_APP_URL` | Public app URL | `http://localhost:3000` / `https://yourdomain.com` |
 
 ---

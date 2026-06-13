@@ -28,6 +28,14 @@ interface CardData {
   createdAt: string;
 }
 
+interface DailyCreditStatus {
+  date: string;
+  limit: number | null;
+  used: number;
+  remaining: number | null;
+  isUnlimited: boolean;
+}
+
 export default function CardsPage() {
   const t = useTranslations("cards");
   const tc = useTranslations("common");
@@ -37,7 +45,6 @@ export default function CardsPage() {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [showUpload, setShowUpload] = useState(false);
-  const [creating, setCreating] = useState(false);
   const [fabOpen, setFabOpen] = useState(false);
   const [selectMode, setSelectMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -45,6 +52,7 @@ export default function CardsPage() {
   const [deleting, setDeleting] = useState(false);
   const [showSourceSetting, setShowSourceSetting] = useState(false);
   const [sourceValue, setSourceValue] = useState("");
+  const [creditStatus, setCreditStatus] = useState<DailyCreditStatus | null>(null);
 
   const fetchCards = useCallback(async () => {
     setLoading(true);
@@ -63,12 +71,29 @@ export default function CardsPage() {
     }
   }, [page, search]);
 
+  const fetchCreditStatus = useCallback(async () => {
+    try {
+      const res = await fetch("/api/credits");
+      if (!res.ok) return;
+      const data = await res.json();
+      setCreditStatus(data.creditStatus);
+    } catch {
+      setCreditStatus(null);
+    }
+  }, []);
+
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchCards();
   }, [fetchCards]);
 
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    fetchCreditStatus();
+  }, [fetchCreditStatus]);
+
   async function handleUploadComplete(frontId?: string, backId?: string, source?: string) {
-    setCreating(true);
+    let errorShown = false;
     try {
       // Create card with uploaded images (recognition is triggered automatically in background)
       const res = await fetch("/api/cards", {
@@ -77,17 +102,33 @@ export default function CardsPage() {
         body: JSON.stringify({ frontImageId: frontId, backImageId: backId, source }),
       });
 
-      if (!res.ok) throw new Error("Failed to create card");
+      const data = await res.json().catch(() => null);
+
+      if (!res.ok) {
+        const message =
+          data?.error?.code === "DAILY_CREDIT_LIMIT_EXCEEDED"
+            ? t("creditLimitExceeded")
+            : data?.error?.message || "Failed to create card";
+        toast.error(message);
+        errorShown = true;
+        throw new Error(message);
+      }
 
       // Close upload modal and refresh card list
       setShowUpload(false);
       setFabOpen(false);
       toast.success(t("uploadSuccess"));
+      if (data?.creditStatus) {
+        setCreditStatus(data.creditStatus);
+      } else {
+        await fetchCreditStatus();
+      }
       await fetchCards();
-    } catch {
-      toast.error("Failed to create card");
-    } finally {
-      setCreating(false);
+    } catch (error) {
+      if (!errorShown) {
+        toast.error(error instanceof Error ? error.message : "Failed to create card");
+      }
+      throw error;
     }
   }
 
@@ -204,6 +245,7 @@ export default function CardsPage() {
             <CardUpload
               onUploadComplete={handleUploadComplete}
               onClose={() => setShowUpload(false)}
+              creditStatus={creditStatus}
             />
           </div>
         </div>

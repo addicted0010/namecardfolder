@@ -105,7 +105,10 @@
     "source": "Source",
     "sourcePlaceholder": "Where you got this card, e.g. XX exhibition",
     "changeSource": "Change Source",
-    "sourceSettingSaved": "Source setting saved"
+    "sourceSettingSaved": "Source setting saved",
+    "creditsRemaining": "Daily credits: {remaining}/{limit} remaining",
+    "creditsUnlimited": "Daily credits: unlimited",
+    "creditLimitExceeded": "Daily credit limit reached. Reply to the service owner if you need a higher quota."
   },
   "debug": {
     "viewLogs": "LLM Logs",

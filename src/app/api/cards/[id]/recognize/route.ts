@@ -3,6 +3,11 @@ import { authenticate } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { apiResponse, apiError, ApiError } from "@/lib/utils";
 import { recognizeCard } from "@/lib/recognition-queue";
+import {
+  DailyCreditLimitExceededError,
+  getCreditCostForImageIds,
+  reserveDailyCredits,
+} from "@/lib/credits";
 
 export async function POST(
   request: NextRequest,
@@ -30,6 +35,11 @@ export async function POST(
       throw new ApiError(400, "NO_IMAGES", "Card has no images");
     }
 
+    await reserveDailyCredits(
+      auth.userId,
+      getCreditCostForImageIds(card.images.map((image) => image.id))
+    );
+
     // Run recognition using shared logic
     const result = await recognizeCard(id);
 
@@ -45,6 +55,15 @@ export async function POST(
 
     return apiResponse(updatedCard);
   } catch (error) {
+    if (error instanceof DailyCreditLimitExceededError) {
+      return apiError(
+        new ApiError(
+          429,
+          "DAILY_CREDIT_LIMIT_EXCEEDED",
+          `Daily credit limit exceeded. Remaining: ${error.status.remaining ?? 0}, required: ${error.requiredCredits}.`
+        )
+      );
+    }
     return apiError(error);
   }
 }

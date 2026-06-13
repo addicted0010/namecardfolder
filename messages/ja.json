@@ -105,7 +105,10 @@
     "source": "入手元",
     "sourcePlaceholder": "名刺の入手場所、例：xx展示会",
     "changeSource": "入手元を変更",
-    "sourceSettingSaved": "入手元設定を保存しました"
+    "sourceSettingSaved": "入手元設定を保存しました",
+    "creditsRemaining": "本日のクレジット：残り {remaining}/{limit}",
+    "creditsUnlimited": "本日のクレジット：無制限",
+    "creditLimitExceeded": "本日のクレジット上限に達しました。上限の引き上げが必要な場合はサービス提供者にご連絡ください。"
   },
   "debug": {
     "viewLogs": "LLM ログ",

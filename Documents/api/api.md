@@ -23,6 +23,7 @@ API 层使用 Next.js App Router 的 Route Handlers，所有 API 路由均在 `/
 | PUT | `/api/cards/[id]` | 更新名片字段 | 是 |
 | DELETE | `/api/cards/[id]` | 删除名片 | 是 |
 | POST | `/api/cards/[id]/recognize` | 触发 AI 识别 | 是 |
+| GET | `/api/credits` | 获取当前用户今日 credit 状态 | 是 |
 | POST | `/api/upload` | 上传图片 | 是 |
 | DELETE | `/api/upload/[id]` | 删除孤儿图片 | 是 |
 | GET | `/api/images/[id]` | 获取图片内容（代理） | 是 |
@@ -66,6 +67,7 @@ API 层使用 Next.js App Router 的 Route Handlers，所有 API 路由均在 `/
 - `NO_IMAGES` — 缺少图片（400）
 - `NOT_A_BUSINESS_CARD` — 非名片图片（422）
 - `PROCESSING_FAILED` — LLM 处理失败（502）
+- `DAILY_CREDIT_LIMIT_EXCEEDED` — 今日 credit 不足（429）
 - `INTERNAL_ERROR` — 服务器内部错误（500）
 - `CURRENT_PASSWORD_WRONG` — 当前密码错误（401）
 - `SAME_PASSWORD` — 新密码与当前密码相同（400）
@@ -122,10 +124,29 @@ fullName、nameReading、company、title、email、phone、address、department�
 ```
 
 **逻辑：**
-1. 创建 Card 记录（状态 PENDING）
-2. 将 CardImage 的 `cardId` 从 null 更新为新 Card ID
-3. 返回完整 Card 对象
-4. 响应发送后，通过 `after()` 触发后台识别队列（`processRecognitionQueue`）
+1. 验证图片存在且仍为孤儿图片（`cardId=null`）
+2. 按图片数量计算所需 credit：单面 1，双面 2
+3. 在数据库事务中原子预扣当日 credit；余额不足返回 429 `DAILY_CREDIT_LIMIT_EXCEEDED`
+4. 创建 Card 记录（状态 PENDING）
+5. 将 CardImage 的 `cardId` 从 null 更新为新 Card ID
+6. 返回完整 Card 对象，并附带最新 `creditStatus`
+7. 响应发送后，通过 `after()` 触发后台识别队列（`processRecognitionQueue`）
+
+**响应补充：**
+```json
+{
+  "id": "clu...",
+  "recognitionStatus": "PENDING",
+  "images": [],
+  "creditStatus": {
+    "date": "2026-06-13",
+    "limit": 100,
+    "used": 2,
+    "remaining": 98,
+    "isUnlimited": false
+  }
+}
+```
 
 ### PUT /api/cards/[id]
 
@@ -149,7 +170,37 @@ fullName、nameReading、company、title、email、phone、mobilePhone、address
 
 ### POST /api/cards/[id]/recognize
 
-触发名片 AI 识别。详见 [LLM 模块文档](../llm/llm.md)。
+触发名片 AI 识别。手动重新识别同样会按当前名片图片数量消耗今日 credit；管理员不受限制。详见 [LLM 模块文档](../llm/llm.md)。
+
+### GET /api/credits
+
+获取当前用户今日 credit 状态。
+
+**响应：**
+```json
+{
+  "creditStatus": {
+    "date": "2026-06-13",
+    "limit": 100,
+    "used": 2,
+    "remaining": 98,
+    "isUnlimited": false
+  }
+}
+```
+
+管理员账号返回：
+```json
+{
+  "creditStatus": {
+    "date": "2026-06-13",
+    "limit": null,
+    "used": 0,
+    "remaining": null,
+    "isUnlimited": true
+  }
+}
+```
 
 ### POST /api/upload
 

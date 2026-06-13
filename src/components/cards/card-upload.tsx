@@ -12,14 +12,21 @@ interface UploadedImage {
   side: "FRONT" | "BACK";
 }
 
+interface DailyCreditStatus {
+  limit: number | null;
+  remaining: number | null;
+  isUnlimited: boolean;
+}
+
 type Phase = "idle" | "processing" | "front-done" | "processing-back" | "both-done";
 
 interface CardUploadProps {
-  onUploadComplete: (frontId?: string, backId?: string, source?: string) => void;
+  onUploadComplete: (frontId?: string, backId?: string, source?: string) => Promise<void> | void;
   onClose: () => void;
+  creditStatus: DailyCreditStatus | null;
 }
 
-export function CardUpload({ onUploadComplete, onClose }: CardUploadProps) {
+export function CardUpload({ onUploadComplete, onClose, creditStatus }: CardUploadProps) {
   const t = useTranslations("cards");
   const tc = useTranslations("common");
 
@@ -28,13 +35,9 @@ export function CardUpload({ onUploadComplete, onClose }: CardUploadProps) {
   const [backImage, setBackImage] = useState<UploadedImage | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
-  const [source, setSource] = useState("");
-
-  // Load source from localStorage on mount
-  useEffect(() => {
-    const saved = localStorage.getItem("cardUploadSource");
-    if (saved) setSource(saved);
-  }, []);
+  const [source, setSource] = useState(() =>
+    typeof window === "undefined" ? "" : localStorage.getItem("cardUploadSource") || ""
+  );
 
   // Camera state (desktop webcam modal)
   const [cameraOpen, setCameraOpen] = useState(false);
@@ -43,6 +46,13 @@ export function CardUpload({ onUploadComplete, onClose }: CardUploadProps) {
 
   const frontCameraRef = useRef<HTMLInputElement>(null);
   const backCameraRef = useRef<HTMLInputElement>(null);
+
+  const requiredCredits = (frontImage ? 1 : 0) + (backImage ? 1 : 0);
+  const hasEnoughCredits =
+    creditStatus?.isUnlimited ||
+    !creditStatus ||
+    requiredCredits === 0 ||
+    (creditStatus.remaining ?? 0) >= requiredCredits;
 
   // Upload a file to the server (includes LLM processing)
   async function uploadFile(file: File, side: "FRONT" | "BACK"): Promise<UploadedImage> {
@@ -93,7 +103,7 @@ export function CardUpload({ onUploadComplete, onClose }: CardUploadProps) {
         setPhase("idle");
       }
     }
-  }, [frontImage, t]);
+  }, [frontImage]);
 
   // Handle mobile native camera input
   function handleCameraInput(side: "FRONT" | "BACK", e: React.ChangeEvent<HTMLInputElement>) {
@@ -142,13 +152,18 @@ export function CardUpload({ onUploadComplete, onClose }: CardUploadProps) {
   // Submit: create card and navigate
   async function handleSubmit() {
     if (!frontImage && !backImage) return;
+    if (!hasEnoughCredits) {
+      setError(t("creditLimitExceeded"));
+      return;
+    }
+
     setSubmitting(true);
     try {
       // Save source to localStorage for next upload
       localStorage.setItem("cardUploadSource", source);
-      onUploadComplete(frontImage?.id, backImage?.id, source || undefined);
-    } catch {
-      setError(tc("error"));
+      await onUploadComplete(frontImage?.id, backImage?.id, source || undefined);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : tc("error"));
       setSubmitting(false);
     }
   }
@@ -250,9 +265,35 @@ export function CardUpload({ onUploadComplete, onClose }: CardUploadProps) {
     </div>
   );
 
+  const renderCreditStatus = () => {
+    if (!creditStatus) return null;
+
+    return (
+      <div className="mb-3 rounded-lg border border-blue-100 bg-blue-50 px-3 py-2 text-xs text-blue-700">
+        {creditStatus.isUnlimited
+          ? t("creditsUnlimited")
+          : t("creditsRemaining", {
+              remaining: creditStatus.remaining ?? 0,
+              limit: creditStatus.limit ?? 0,
+            })}
+      </div>
+    );
+  };
+
+  const renderCreditWarning = () => {
+    if (hasEnoughCredits || requiredCredits === 0) return null;
+
+    return (
+      <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-700">
+        {t("creditLimitExceeded")}
+      </div>
+    );
+  };
+
   return (
     <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-6">
       {hiddenInputs}
+      {renderCreditStatus()}
 
       {/* IDLE: compact single dropzone */}
       {phase === "idle" && (
@@ -329,7 +370,7 @@ export function CardUpload({ onUploadComplete, onClose }: CardUploadProps) {
           <div className="flex gap-3 pt-2 border-t border-gray-100">
             <button
               onClick={handleSubmit}
-              disabled={submitting}
+              disabled={submitting || !hasEnoughCredits}
               className="flex-1 py-2 px-4 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50 flex items-center justify-center gap-2"
             >
               {submitting && <Loader2 className="w-4 h-4 animate-spin" />}
@@ -342,6 +383,7 @@ export function CardUpload({ onUploadComplete, onClose }: CardUploadProps) {
               {tc("cancel")}
             </button>
           </div>
+          {renderCreditWarning()}
         </div>
       )}
 
@@ -391,7 +433,7 @@ export function CardUpload({ onUploadComplete, onClose }: CardUploadProps) {
           <div className="flex gap-3 pt-2 border-t border-gray-100">
             <button
               onClick={handleSubmit}
-              disabled={submitting}
+              disabled={submitting || !hasEnoughCredits}
               className="flex-1 py-2 px-4 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50 flex items-center justify-center gap-2"
             >
               {submitting && <Loader2 className="w-4 h-4 animate-spin" />}
@@ -404,6 +446,7 @@ export function CardUpload({ onUploadComplete, onClose }: CardUploadProps) {
               {tc("cancel")}
             </button>
           </div>
+          {renderCreditWarning()}
         </div>
       )}
 
@@ -475,6 +518,7 @@ function CameraCapture({
   }, [facingMode]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     startCamera();
     return () => {
       if (streamRef.current) {

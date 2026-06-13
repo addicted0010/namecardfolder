@@ -7,6 +7,7 @@
 > - `src/lib/llm/claude-provider.ts` — Claude API 实现
 > - `src/lib/llm/alibaba-provider.ts` — 通义千问 API 实现
 > - `src/lib/recognition-queue.ts` — 识别队列调度逻辑
+> - `src/lib/credits.ts` — 每日 credit 配额与预扣逻辑
 > - `src/app/api/cards/[id]/recognize/route.ts` — 手动识别 API 入口
 > - `src/app/api/cron/recognize/route.ts` — Cron 兜底触发端点
 
@@ -155,8 +156,9 @@ interface LLMLogEntry {
 
 ### 触发方式
 
-1. **即时触发**：`POST /api/cards` 创建名片后，通过 `after()` 回调触发 `processRecognitionQueue()`
-2. **Cron 兜底**：`GET /api/cron/recognize` 每分钟由 Vercel Cron 调用，处理漏网之鱼
+1. **即时触发**：`POST /api/cards` 创建名片时先按图片面数预扣每日 credit，成功后通过 `after()` 回调触发 `processRecognitionQueue()`
+2. **手动触发**：`POST /api/cards/[id]/recognize` 会按当前名片图片数量再次消耗每日 credit
+3. **Cron 兜底**：`GET /api/cron/recognize` 每分钟由 Vercel Cron 调用，处理漏网之鱼
 
 ### 队列处理逻辑 (`processRecognitionQueue`)
 
@@ -186,18 +188,15 @@ interface LLMLogEntry {
 graph TD
     A[POST 请求] --> B[验证认证]
     B --> C[查询 Card + Images]
-    C --> D[设置状态 PROCESSING]
-    D --> E[准备图片 Base64]
-    E --> F{存储类型}
-    F -->|本地| G[readFile + toBase64]
-    F -->|Blob| H[携带 Token fetch + toBase64]
-    G --> I[调用 LLM recognizeCard]
-    H --> I
-    I --> J[保存 LlmLog]
-    J --> K[更新 Card 字段]
-    K --> L{是否有错误}
-    L -->|无| M[状态 SUCCESS]
-    L -->|有| N[状态 FAILED]
+    C --> D[按图片数预扣每日 credit]
+    D --> E[设置状态 PROCESSING]
+    E --> F[每张图片执行 detectCard + detectOrientation + 裁剪压缩]
+    F --> G[调用 LLM recognizeCard]
+    G --> H[保存 LlmLog]
+    H --> I[更新 Card 字段]
+    I --> J{是否有错误}
+    J -->|无| successStatus[状态 SUCCESS]
+    J -->|有| failedStatus[状态 FAILED]
 ```
 
 ### 结果处理
@@ -213,6 +212,7 @@ graph TD
 | API Key 缺失 | 工厂函数抛出异常 |
 | HTTP 请求失败 | 返回空结果 + 错误日志 |
 | JSON 解析失败 | 返回 `{ rawText, notes }` 作为降级 |
+| 今日 credit 不足 | 返回 429 `DAILY_CREDIT_LIMIT_EXCEEDED`，不触发 LLM |
 | 异常错误 | catch 后重置 Card 状态为 FAILED |
 
 ## 环境变量

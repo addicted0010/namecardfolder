@@ -179,6 +179,7 @@ git push origin main
 | `ALIYUN_OSS_REGION` | `oss-ap-southeast-1` | OSS 区域 |
 | `ALIYUN_OSS_BUCKET` | 你的 Bucket 名称 | OSS Bucket |
 | `ALIYUN_OSS_STS_ENDPOINT` | `https://sts.aliyuncs.com` | STS 端点（可选） |
+| `CREDIT_TIME_ZONE` | `Asia/Tokyo` | 每日 credit 重置时区（可选，默认 `Asia/Tokyo`） |
 | `NEXT_PUBLIC_APP_URL` | 你的生产域名（如 `https://cardvault.example.com`） | 应用公开地址 |
 
 > **提示**：Vercel Postgres 创建后会自动注入数据库相关变量。阿里云 OSS 和 LLM 相关的变量需手动添加。
@@ -383,6 +384,7 @@ npx tsx scripts/migrate-blob-to-oss.ts
 
 | 变量 | 说明 | 示例 |
 |------|------|------|
+| `CREDIT_TIME_ZONE` | 每日 credit 重置时区。普通用户每天 100 credit，单面名片消耗 1 credit，双面名片消耗 2 credit；管理员账号不受限制 | `Asia/Tokyo` |
 | `NEXT_PUBLIC_APP_URL` | 应用公开访问地址 | `http://localhost:3000` / `https://yourdomain.com` |
 
 ---

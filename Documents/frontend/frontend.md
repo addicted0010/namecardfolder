@@ -73,30 +73,33 @@ graph TB
 | selectMode | boolean | 选择模式 |
 | selectedIds | Set<string> | 已选名片 ID |
 | deleteConfirmOpen | boolean | 删除确认弹窗 |
+| creditStatus | DailyCreditStatus? | 今日 credit 状态 |
 
 **交互流程：**
 
 ```mermaid
 graph TD
-    A[页面加载] --> B[fetchCards GET /api/cards]
-    B --> C[渲染 CardList]
+    pageLoad[页面加载] --> fetchCards[fetchCards GET /api/cards]
+    pageLoad --> fetchCredits[fetchCreditStatus GET /api/credits]
+    fetchCards --> renderList[渲染 CardList]
     
-    D[搜索输入] --> E[300ms 防抖]
-    E --> F[更新 search + 重置 page=1]
-    F --> B
+    searchInput[搜索输入] --> debounce[300ms 防抖]
+    debounce --> updateSearch[更新 search + 重置 page=1]
+    updateSearch --> fetchCards
     
-    G[点击 FAB +] --> H[展开子菜单]
-    H --> I[点击上传 → 打开上传弹窗]
-    H --> J[点击删除 → 进入选择模式]
+    fabClick[点击 FAB +] --> openMenu[展开子菜单]
+    openMenu --> openUpload[点击上传 → 打开上传弹窗]
+    openMenu --> enterSelect[点击删除 → 进入选择模式]
     
-    K[上传完成] --> L[POST /api/cards 创建名片]
-    L --> M[刷新列表 + Toast 提示]
+    uploadDone[上传完成] --> createCard[POST /api/cards 创建名片]
+    createCard --> updateCredits[更新 creditStatus]
+    updateCredits --> refreshList[刷新列表 + Toast 提示]
     
-    N[选择模式点击卡片] --> O[切换选中状态]
-    O --> P[再次点击删除按钮]
-    P --> Q[显示确认弹窗]
-    Q --> R[批量 DELETE 请求]
-    R --> B
+    selectCard[选择模式点击卡片] --> toggleSelected[切换选中状态]
+    toggleSelected --> deleteClick[再次点击删除按钮]
+    deleteClick --> confirmDelete[显示确认弹窗]
+    confirmDelete --> batchDelete[批量 DELETE 请求]
+    batchDelete --> fetchCards
 ```
 
 **UI 结构：**
@@ -127,7 +130,7 @@ graph TD
 
 **上传流程说明：**
 
-上传与 AI 识别已完全解耦。上传阶段仅做基本格式转换（Sharp JPEG + resize），不调用 LLM，响应速度约 1-2 秒。名片检测（是否为名片）、智能裁剪、压缩均在后台识别队列中异步完成。上传完成后前端刷新列表展示新卡片（处于"未识别"状态）。提交按钮文案为"完成"（非"开始识别"）。
+上传与 AI 识别已完全解耦。上传阶段仅做基本格式转换（Sharp JPEG + resize），不调用 LLM，响应速度约 1-2 秒。名片检测（是否为名片）、智能裁剪、压缩均在后台识别队列中异步完成。点击“完成”创建名片时会按图片面数消耗今日 credit；余额不足时后端拒绝创建，前端显示超限提示。上传完成后前端刷新列表展示新卡片（处于"未识别"状态）。提交按钮文案为"完成"（非"开始识别"）。
 
 ## 核心组件
 
@@ -177,10 +180,11 @@ idle → processing → front-done → processing-back → both-done
 - 拍照上传（移动端原生 camera input / 桌面端 webcam）
 - 图片预览 + 删除
 - 正反面双图上传
+- 显示今日剩余 credit；单面消耗 1 credit，双面消耗 2 credit，余额不足时禁用完成按钮
 - 来源输入框（textarea 2行高度，用于记录名片获取场合如展会名称）
   - 数据保存到 Card.source 字段
   - 上传后自动保存到 localStorage，下次打开时自动填入（方便展会连续扫描场景）
-- LLM 卡片检测（非名片时报错）
+- 上传阶段不调用 LLM；非名片检测在后台识别队列中执行，失败后名片状态变为 FAILED
 - 错误提示 + 重试按钮
 
 **子组件 CameraCapture：**
