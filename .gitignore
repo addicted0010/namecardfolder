@@ -60,6 +60,9 @@ CLAUDE.md
 # raw screen recording (source for the demo clip, not published)
 cardvault_origin.mp4
 
+# full demo videos are kept local; README uses optimized GIF previews
+/public/videos/*.mp4
+
 # demo video editing intermediates
 .demo_tmp/
 .demo_frames/

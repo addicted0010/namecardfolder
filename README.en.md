@@ -4,9 +4,9 @@
 
 **Treasure Every Connection.** CardVault is an AI-powered business card manager for individuals and small teams. Capture both sides of a card, let AI extract the contact details, and keep the meeting context so every new connection is easy to find later.
 
-<video src="https://github.com/addicted0010/namecardfolder/raw/develop/public/videos/cardvault_demo.mp4" controls muted playsinline width="320"></video>
+![CardVault demo](./public/videos/cardvault_demo.gif)
 
-[Watch the English demo video](https://github.com/addicted0010/namecardfolder/raw/develop/public/videos/cardvault_demo.mp4)
+▶ [Watch the full English demo video](./public/videos/cardvault_demo.mp4)
 
 ## What You Can Do
 
