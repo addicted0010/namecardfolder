@@ -113,7 +113,7 @@ prisma/                    # Schema & 数据库迁移
 | `CLAUDE_API_KEY` | Anthropic API Key |
 | `CLAUDE_MODEL` | 如 `claude-sonnet-4.6` |
 | `ALIBABA_API_KEY` | 阿里云百炼 API Key |
-| `ALIBABA_MODEL` | 如 `qwen3.7-max` |
+| `ALIBABA_MODEL` | 如 `qwen3.7-plus` |
 | `STORAGE_PROVIDER` | `local`（开发）/ `aliyun-oss`（生产）/ `vercel`（备选） |
 | `ALIYUN_OSS_ACCESS_KEY_ID` | 阿里云 RAM AccessKey ID（OSS 模式） |
 | `ALIYUN_OSS_ACCESS_KEY_SECRET` | 阿里云 RAM AccessKey Secret（OSS 模式） |

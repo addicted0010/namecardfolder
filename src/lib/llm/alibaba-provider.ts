@@ -11,7 +11,7 @@ export class AlibabaProvider implements LLMProvider {
       process.env.ALIBABA_BASE_URL ||
       "https://dashscope-intl.aliyuncs.com/compatible-mode/v1";
     this.apiKey = process.env.ALIBABA_API_KEY || "";
-    this.model = process.env.ALIBABA_MODEL || "qwen3.7-max";
+    this.model = process.env.ALIBABA_MODEL || "qwen3.7-plus";
   }
 
   async recognizeCard(

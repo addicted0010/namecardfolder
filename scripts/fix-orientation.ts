@@ -196,7 +196,7 @@ function parseOrientationJSON(text: string): OrientationResult {
 async function askIsReadable(base64: string): Promise<boolean> {
   const baseUrl = process.env.ALIBABA_BASE_URL || "https://dashscope-intl.aliyuncs.com/compatible-mode/v1";
   const apiKey = process.env.ALIBABA_API_KEY || "";
-  const model = process.env.ALIBABA_MODEL || "qwen3.7-max";
+  const model = process.env.ALIBABA_MODEL || "qwen3.7-plus";
 
   const prompt = `Look at this business card image. Is the text on this card in normal readable orientation? (text reads horizontally from left to right, and the card is wider than tall)
 

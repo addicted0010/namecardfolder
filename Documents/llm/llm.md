@@ -125,7 +125,7 @@ interface LLMLogEntry {
 ### AlibabaProvider
 
 - **API**：OpenAI-Compatible 格式 (`/chat/completions`)
-- **模型**：默认 `qwen3.7-max`（可通过 `ALIBABA_MODEL` 配置）
+- **模型**：默认 `qwen3.7-plus`（可通过 `ALIBABA_MODEL` 配置）
 - **图片格式**：Base64 Data URL（`data:image/jpeg;base64,...`）
 - **认证**：`Authorization: Bearer {key}`
 - **特殊参数**：`enable_thinking: false`（禁用思考过程输出）
@@ -225,7 +225,7 @@ graph TD
 | `CLAUDE_MODEL` | Claude 模型 | `claude-sonnet-4.6` |
 | `ALIBABA_BASE_URL` | 通义千问 API 地址 | `https://dashscope-intl.aliyuncs.com/compatible-mode/v1` |
 | `ALIBABA_API_KEY` | 通义千问 API 密钥 | — |
-| `ALIBABA_MODEL` | 通义千问模型 | `qwen3.7-max` |
+| `ALIBABA_MODEL` | 通义千问模型 | `qwen3.7-plus` |
 
 ## 日志审计
 

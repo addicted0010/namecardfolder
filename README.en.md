@@ -115,7 +115,7 @@ prisma/                    # Schema & database migrations
 | `CLAUDE_API_KEY` | Anthropic API key |
 | `CLAUDE_MODEL` | e.g. `claude-sonnet-4.6` |
 | `ALIBABA_API_KEY` | Alibaba Bailian API key |
-| `ALIBABA_MODEL` | e.g. `qwen3.7-max` |
+| `ALIBABA_MODEL` | e.g. `qwen3.7-plus` |
 | `STORAGE_PROVIDER` | `local` (dev) / `aliyun-oss` (prod) / `vercel` (alternative) |
 | `ALIYUN_OSS_ACCESS_KEY_ID` | Alibaba RAM AccessKey ID (OSS mode) |
 | `ALIYUN_OSS_ACCESS_KEY_SECRET` | Alibaba RAM AccessKey Secret (OSS mode) |
