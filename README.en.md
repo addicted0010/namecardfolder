@@ -6,8 +6,6 @@
 
 ![CardVault demo](./public/videos/cardvault_demo.gif)
 
-▶ [Watch the full English demo video](./public/videos/cardvault_demo.mp4)
-
 ## What You Can Do
 
 - **Capture cards on the spot**: Open the web app on your phone and take photos of the front and back.

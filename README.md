@@ -6,8 +6,6 @@
 
 ![CardVault 中文演示](./public/videos/cardvault_demo_zh.gif)
 
-▶ [观看完整中文演示视频](./public/videos/cardvault_demo_zh.mp4)
-
 ## 你可以用它做什么
 
 - **现场快速录入名片**：手机打开网页，拍摄名片正反面即可上传。
