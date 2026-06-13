@@ -4,11 +4,16 @@ import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { useAuth } from "@/contexts/auth-context";
 import { LocaleSwitcher } from "./locale-switcher";
-import { useState, useRef, useEffect } from "react";
-import { LogOut, User, KeyRound } from "lucide-react";
+import { useState, useRef, useEffect, useCallback } from "react";
+import { LogOut, User, KeyRound, Coins } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "@/i18n/navigation";
 import { ChangePasswordModal } from "@/components/auth/change-password-modal";
+
+interface DailyCreditStatus {
+  remaining: number | null;
+  isUnlimited: boolean;
+}
 
 export function Header() {
   const t = useTranslations("auth");
@@ -16,6 +21,7 @@ export function Header() {
   const router = useRouter();
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [changePasswordOpen, setChangePasswordOpen] = useState(false);
+  const [creditStatus, setCreditStatus] = useState<DailyCreditStatus | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -27,6 +33,37 @@ export function Header() {
     document.addEventListener("mousedown", handleClick);
     return () => document.removeEventListener("mousedown", handleClick);
   }, []);
+
+  const fetchCreditStatus = useCallback(async () => {
+    if (!user) return;
+
+    try {
+      const res = await fetch("/api/credits");
+      if (!res.ok) return;
+      const data = await res.json();
+      setCreditStatus(data.creditStatus);
+    } catch {
+      // Keep the header compact; failures should not block navigation.
+    }
+  }, [user]);
+
+  useEffect(() => {
+    if (!user) return;
+
+    const handleCreditUpdate = () => {
+      void fetchCreditStatus();
+    };
+
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    void fetchCreditStatus();
+    window.addEventListener("focus", handleCreditUpdate);
+    window.addEventListener("cardvault:credits-updated", handleCreditUpdate);
+
+    return () => {
+      window.removeEventListener("focus", handleCreditUpdate);
+      window.removeEventListener("cardvault:credits-updated", handleCreditUpdate);
+    };
+  }, [user, fetchCreditStatus]);
 
   async function handleLogout() {
     await fetch("/api/auth/logout", { method: "POST" });
@@ -58,6 +95,15 @@ export function Header() {
 
           {/* Right section */}
           <div className="flex items-center gap-2">
+            {!loading && user && creditStatus && (
+              <div
+                className="flex items-center gap-1 rounded-lg bg-amber-50 px-2 py-1 text-xs font-medium tabular-nums text-amber-700"
+                title="Daily credits"
+              >
+                <Coins className="h-4 w-4" />
+                <span>{creditStatus.isUnlimited ? "∞" : creditStatus.remaining ?? 0}</span>
+              </div>
+            )}
             <LocaleSwitcher />
 
             {!loading && user && (

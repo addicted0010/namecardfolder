@@ -77,6 +77,7 @@ export default function CardsPage() {
       if (!res.ok) return;
       const data = await res.json();
       setCreditStatus(data.creditStatus);
+      window.dispatchEvent(new Event("cardvault:credits-updated"));
     } catch {
       setCreditStatus(null);
     }
@@ -120,6 +121,7 @@ export default function CardsPage() {
       toast.success(t("uploadSuccess"));
       if (data?.creditStatus) {
         setCreditStatus(data.creditStatus);
+        window.dispatchEvent(new Event("cardvault:credits-updated"));
       } else {
         await fetchCreditStatus();
       }

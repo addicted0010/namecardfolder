@@ -97,6 +97,7 @@ export default function LoginPage() {
             </div>
           </div>
           <h1 className="text-2xl font-bold text-gray-900">{t("loginTitle")}</h1>
+          <p className="mt-2 text-sm text-gray-500">{t("slogan")}</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
