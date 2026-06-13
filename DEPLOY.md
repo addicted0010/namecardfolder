@@ -252,10 +252,19 @@ DATABASE_URL="postgresql://..." SEED_USERNAME=admin SEED_PASSWORD=你的密码 n
 
 **阿里云百炼 API 地址参考**：
 
-| 区域 | 地址 |
+各区域地址均需将 `{WorkspaceId}` 替换为真实的 Workspace ID。
+
+| 区域 | 地址（新版） |
 |------|------|
-| 新加坡（国际站） | `https://dashscope-intl.aliyuncs.com/compatible-mode/v1` |
-| 中国大陆 | `https://dashscope.aliyuncs.com/compatible-mode/v1` |
+| 新加坡 | `https://{WorkspaceId}.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1` |
+| 美国（弗吉尼亚） | `https://dashscope-us.aliyuncs.com/compatible-mode/v1` |
+| 华北2（北京） | `https://dashscope.aliyuncs.com/compatible-mode/v1` |
+| 中国香港 | `https://cn-hongkong.dashscope.aliyuncs.com/compatible-mode/v1` |
+| 德国（法兰克福） | `https://{WorkspaceId}.eu-central-1.maas.aliyuncs.com/compatible-mode/v1` |
+
+> **重要**：新加坡旧版地址 `https://dashscope-intl.aliyuncs.com/compatible-mode/v1` **即将下线**，请迁移到上表新版地址。
+
+> **重要**：国际站（新加坡、弗吉尼亚）与中国大陆（北京）使用**不同的 API Key**，请在对应地域的控制台分别获取。
 
 > `ALIBABA_BASE_URL` 和 `CLAUDE_BASE_URL` 支持自定义，可用于配置代理服务器或其他区域端点。
 

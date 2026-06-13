@@ -194,7 +194,14 @@ function parseOrientationJSON(text: string): OrientationResult {
  * This is much more reliable than asking it to determine rotation angle.
  */
 async function askIsReadable(base64: string): Promise<boolean> {
-  const baseUrl = process.env.ALIBABA_BASE_URL || "https://dashscope-intl.aliyuncs.com/compatible-mode/v1";
+  const baseUrl = process.env.ALIBABA_BASE_URL;
+  if (!baseUrl) {
+    throw new Error(
+      "ALIBABA_BASE_URL is required. The old dashscope-intl.aliyuncs.com endpoint is deprecated. " +
+      "Set ALIBABA_BASE_URL to your regional endpoint, e.g. " +
+      "https://{WorkspaceId}.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1 for Singapore."
+    );
+  }
   const apiKey = process.env.ALIBABA_API_KEY || "";
   const model = process.env.ALIBABA_MODEL || "qwen3.7-plus";
 

@@ -56,3 +56,10 @@ CLAUDE.md
 
 # vercel deploy helper scratch dir
 .vercel-tmp/
+
+# raw screen recording (source for the demo clip, not published)
+cardvault_origin.mp4
+
+# demo video editing intermediates
+.demo_tmp/
+.demo_frames/

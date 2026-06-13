@@ -256,10 +256,19 @@ DATABASE_URL="postgresql://..." SEED_USERNAME=admin SEED_PASSWORD=your-password 
 
 **Alibaba Bailian API endpoints:**
 
-| Region | Endpoint |
+Replace `{WorkspaceId}` with your real Workspace ID in all region-specific URLs.
+
+| Region | Endpoint (new) |
 |--------|----------|
-| Singapore (International) | `https://dashscope-intl.aliyuncs.com/compatible-mode/v1` |
-| China Mainland | `https://dashscope.aliyuncs.com/compatible-mode/v1` |
+| Singapore | `https://{WorkspaceId}.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1` |
+| US (Virginia) | `https://dashscope-us.aliyuncs.com/compatible-mode/v1` |
+| China (Beijing) | `https://dashscope.aliyuncs.com/compatible-mode/v1` |
+| China (Hong Kong) | `https://cn-hongkong.dashscope.aliyuncs.com/compatible-mode/v1` |
+| Germany (Frankfurt) | `https://{WorkspaceId}.eu-central-1.maas.aliyuncs.com/compatible-mode/v1` |
+
+> **Important**: The old Singapore URL `https://dashscope-intl.aliyuncs.com/compatible-mode/v1` is **being deprecated**. Migrate to the new URL shown above.
+
+> **Important**: The international regions (Singapore, Virginia) and China mainland (Beijing) use **separate API Keys**. Obtain each key from the corresponding regional console.
 
 > `ALIBABA_BASE_URL` and `CLAUDE_BASE_URL` are customizable, useful for configuring proxy servers or other regional endpoints.
 
