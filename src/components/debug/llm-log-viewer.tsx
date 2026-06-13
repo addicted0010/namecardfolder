@@ -138,7 +138,7 @@ export function LlmLogViewer({ cardId, onClose }: LlmLogViewerProps) {
               {logs.map((log) => (
                 <div
                   key={log.id}
-                  className="border border-gray-200 rounded-lg overflow-hidden"
+                  className="min-w-0 border border-gray-200 rounded-lg overflow-hidden"
                 >
                   {/* Summary row */}
                   <button
@@ -177,7 +177,7 @@ export function LlmLogViewer({ cardId, onClose }: LlmLogViewerProps) {
 
                   {/* Expanded detail */}
                   {expandedId === log.id && (
-                    <div className="border-t border-gray-200 px-4 py-3 bg-gray-50">
+                    <div className="min-w-0 border-t border-gray-200 px-4 py-3 bg-gray-50">
                       {loadingDetail ? (
                         <div className="flex items-center justify-center py-4">
                           <Loader2 className="w-5 h-5 animate-spin text-blue-600" />
@@ -212,12 +212,11 @@ export function LlmLogViewer({ cardId, onClose }: LlmLogViewerProps) {
 }
 
 function JsonSection({ title, data }: { title: string; data: unknown }) {
-  const [expanded, setExpanded] = useState(false);
+  const [expanded, setExpanded] = useState(true);
   const json = JSON.stringify(data, null, 2);
-  const isLong = json.length > 500;
 
   return (
-    <div>
+    <div className="min-w-0">
       <button
         onClick={() => setExpanded(!expanded)}
         className="text-sm font-medium text-gray-700 mb-1 flex items-center gap-1"
@@ -229,15 +228,18 @@ function JsonSection({ title, data }: { title: string; data: unknown }) {
         )}
         {title}
       </button>
-      {(expanded || !isLong) && (
-        <pre className="text-xs bg-white border border-gray-200 p-3 rounded-lg overflow-x-auto max-h-80 overflow-y-auto">
+      {expanded && (
+        <pre className="max-w-full max-h-[60vh] overflow-y-auto overflow-x-hidden whitespace-pre-wrap break-all rounded-lg border border-gray-200 bg-white p-3 text-xs leading-relaxed [overflow-wrap:anywhere]">
           {json}
         </pre>
       )}
-      {!expanded && isLong && (
-        <pre className="text-xs bg-white border border-gray-200 p-3 rounded-lg text-gray-500">
-          {json.slice(0, 200)}...
-        </pre>
+      {!expanded && (
+        <button
+          onClick={() => setExpanded(true)}
+          className="text-xs text-gray-500 bg-white border border-gray-200 p-3 rounded-lg w-full text-left hover:bg-gray-50"
+        >
+          {title}
+        </button>
       )}
     </div>
   );
