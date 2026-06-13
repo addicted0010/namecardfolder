@@ -171,7 +171,7 @@ In **Settings → Environment Variables** of the Vercel project, add:
 | `CLAUDE_MODEL` | `claude-sonnet-4.6` | Claude model |
 | `ALIBABA_BASE_URL` | `https://dashscope-intl.aliyuncs.com/compatible-mode/v1` | Bailian API endpoint |
 | `ALIBABA_API_KEY` | Your Bailian API key | Bailian credential |
-| `ALIBABA_MODEL` | `qwen3.7-plus` (or `qwen3.6-plus`) | Bailian model |
+| `ALIBABA_MODEL` | `qwen3.7-plus` | Bailian model |
 | `STORAGE_PROVIDER` | `aliyun-oss` | Use Alibaba OSS storage (recommended) |
 | `ALIYUN_OSS_ACCESS_KEY_ID` | RAM user AccessKey ID | Alibaba RAM credential |
 | `ALIYUN_OSS_ACCESS_KEY_SECRET` | RAM user AccessKey Secret | Alibaba RAM credential |
@@ -250,9 +250,9 @@ DATABASE_URL="postgresql://..." SEED_USERNAME=admin SEED_PASSWORD=your-password 
 | `CLAUDE_MODEL` | Claude model name | `claude-sonnet-4.6` |
 | `ALIBABA_BASE_URL` | Alibaba Bailian API endpoint (region-configurable) | see below |
 | `ALIBABA_API_KEY` | Alibaba Bailian API key | `sk-...` |
-| `ALIBABA_MODEL` | Bailian model name | `qwen3.7-plus` / `qwen3.6-plus` |
+| `ALIBABA_MODEL` | Bailian model name | `qwen3.7-plus` |
 
-> **About qwen3.6-plus**: When using `qwen3.6-plus`, the API enables thinking mode (`enable_thinking: true`, `thinking_budget: 8000`) for higher output quality at a slightly slower response.
+> **About thinking mode**: Card recognition is an OCR extraction task that does not need deep reasoning. All Bailian requests explicitly set `enable_thinking: false` — enabling thinking would significantly slow responses, so keep it off.
 
 **Alibaba Bailian API endpoints:**
 

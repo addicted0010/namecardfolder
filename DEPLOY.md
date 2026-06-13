@@ -171,7 +171,7 @@ git push origin main
 | `CLAUDE_MODEL` | `claude-sonnet-4.6` | Claude 模型 |
 | `ALIBABA_BASE_URL` | `https://dashscope-intl.aliyuncs.com/compatible-mode/v1` | 百炼 API 地址 |
 | `ALIBABA_API_KEY` | 你的百炼 API Key | 百炼密钥 |
-| `ALIBABA_MODEL` | `qwen3.7-plus`（或 `qwen3.6-plus`） | 百炼模型 |
+| `ALIBABA_MODEL` | `qwen3.7-plus` | 百炼模型 |
 | `STORAGE_PROVIDER` | `aliyun-oss` | 使用阿里云 OSS 存储（推荐） |
 | `ALIYUN_OSS_ACCESS_KEY_ID` | RAM 用户 AccessKey ID | 阿里云 RAM 凭证 |
 | `ALIYUN_OSS_ACCESS_KEY_SECRET` | RAM 用户 AccessKey Secret | 阿里云 RAM 凭证 |
@@ -246,9 +246,9 @@ DATABASE_URL="postgresql://..." SEED_USERNAME=admin SEED_PASSWORD=你的密码 n
 | `CLAUDE_MODEL` | Claude 模型名称 | `claude-sonnet-4.6` |
 | `ALIBABA_BASE_URL` | 阿里云百炼 API 地址（可按区域配置） | 见下方说明 |
 | `ALIBABA_API_KEY` | 阿里云百炼 API 密钥 | `sk-...` |
-| `ALIBABA_MODEL` | 百炼模型名称 | `qwen3.7-plus` / `qwen3.6-plus` |
+| `ALIBABA_MODEL` | 百炼模型名称 | `qwen3.7-plus` |
 
-> **qwen3.6-plus 说明**：使用 `qwen3.6-plus` 时，接口会启用 thinking 模式（`enable_thinking: true`，`thinking_budget: 8000`），输出质量更高但响应稍慢。
+> **关于 thinking 模式**：名片识别属于 OCR 抽取场景，无需深度思考。代码中所有百炼请求均显式设置 `enable_thinking: false`——开启 thinking 会大幅拖慢响应，请勿打开。
 
 **阿里云百炼 API 地址参考**：
 

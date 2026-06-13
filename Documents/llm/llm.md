@@ -128,7 +128,7 @@ interface LLMLogEntry {
 - **模型**：默认 `qwen3.7-plus`（可通过 `ALIBABA_MODEL` 配置）
 - **图片格式**：Base64 Data URL（`data:image/jpeg;base64,...`）
 - **认证**：`Authorization: Bearer {key}`
-- **特殊参数**：`enable_thinking: false`（禁用思考过程输出）
+- **特殊参数**：所有请求显式设置 `enable_thinking: false`。名片识别属于 OCR 抽取场景，无需深度思考，开启 thinking 会大幅拖慢响应，因此始终关闭。
 
 ## 提示词设计
 
