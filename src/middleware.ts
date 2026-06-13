@@ -3,14 +3,27 @@ import { routing } from "./i18n/routing";
 import { type NextRequest, NextResponse } from "next/server";
 import { jwtVerify } from "jose";
 
-// Inline JWT verification for Edge runtime (no Prisma/bcrypt dependency)
-const JWT_SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET || "fallback-secret-do-not-use-in-production"
-);
+// Inline JWT verification for Edge runtime (no Prisma/bcrypt dependency).
+// Fails closed in production if JWT_SECRET is missing/weak (no public fallback).
+const DEV_FALLBACK_SECRET = "dev-insecure-fallback-secret-change-me-please";
+
+function getJwtSecret(): Uint8Array {
+  const secret = process.env.JWT_SECRET;
+  if (secret) {
+    return new TextEncoder().encode(secret);
+  }
+  // No secret set: never fall back to a public default in production.
+  if (process.env.NODE_ENV === "production") {
+    throw new Error(
+      "JWT_SECRET must be set in production (recommended: a random string of at least 32 characters)."
+    );
+  }
+  return new TextEncoder().encode(DEV_FALLBACK_SECRET);
+}
 
 async function verifyJWT(token: string): Promise<boolean> {
   try {
-    await jwtVerify(token, JWT_SECRET);
+    await jwtVerify(token, getJwtSecret());
     return true;
   } catch {
     return false;

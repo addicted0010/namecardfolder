@@ -1,5 +1,7 @@
 # CardVault 部署与配置指南
 
+> 简体中文 | [English](./DEPLOY.en.md)
+
 ## 目录
 
 - [一、开发环境部署（本地 Mac）](#一开发环境部署本地-mac)
@@ -161,7 +163,8 @@ git push origin main
 | 变量名 | 值 | 说明 |
 |--------|-----|------|
 | `DATABASE_URL` | Vercel Postgres 连接字符串 | 数据库连接 |
-| `JWT_SECRET` | 随机生成的长字符串（至少 32 位） | JWT 签名密钥 |
+| `JWT_SECRET` | 随机生成的长字符串（至少 32 位） | JWT 签名密钥（生产环境**必填**，缺失会导致鉴权直接报错） |
+| `ADMIN_EMAILS` | 逗号分隔的管理员邮箱 | 用该邮箱的 Google 账号登录即获得管理员权限（可留空） |
 | `LLM_PROVIDER` | `claude` 或 `alibaba` | LLM 服务商选择 |
 | `CLAUDE_BASE_URL` | `https://api.anthropic.com`（或代理地址） | Claude API 地址 |
 | `CLAUDE_API_KEY` | 你的 Claude API Key | Claude 密钥 |
@@ -228,7 +231,10 @@ DATABASE_URL="postgresql://..." SEED_USERNAME=admin SEED_PASSWORD=你的密码 n
 
 | 变量 | 说明 | 示例 |
 |------|------|------|
-| `JWT_SECRET` | JWT 签名密钥，至少 32 位 | 随机字符串 |
+| `JWT_SECRET` | JWT 签名密钥，至少 32 位（生产环境必填，未设置时鉴权会 fail-closed 报错） | 随机字符串 |
+| `ADMIN_EMAILS` | 管理员邮箱列表（逗号分隔，大小写不敏感）。Google 登录时若已验证邮箱命中该列表，自动授予管理员权限（如查看 LLM 日志）；种子账户的邮箱也取自此列表的第一项 | `you@gmail.com,teammate@gmail.com` |
+
+> **管理员指定说明**：项目不再在代码/迁移中硬编码任何邮箱。管理员完全由 `ADMIN_EMAILS` 环境变量决定。留空则没有基于邮箱的管理员（种子账户仍为管理员）。
 
 ### LLM 服务
 

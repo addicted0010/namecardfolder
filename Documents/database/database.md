@@ -29,6 +29,7 @@ graph TB
 | passwordHash | String? | bcrypt 加密密码（Google 用户可为 null） |
 | googleId | String? | Google OAuth 唯一标识（唯一） |
 | displayName | String? | 显示名称 |
+| isAdmin | Boolean | 是否为管理员（默认 false），控制 LLM 日志查看等权限 |
 | createdAt | DateTime | 创建时间 |
 | updatedAt | DateTime | 更新时间 |
 

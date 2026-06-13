@@ -3,12 +3,50 @@ import bcrypt from "bcryptjs";
 import { cookies } from "next/headers";
 import { prisma } from "./prisma";
 
-const JWT_SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET || "fallback-secret-do-not-use-in-production"
-);
-
 const COOKIE_NAME = "auth_token";
 const TOKEN_EXPIRY = "7d";
+
+const DEV_FALLBACK_SECRET = "dev-insecure-fallback-secret-change-me-please";
+
+/**
+ * Resolve the JWT signing secret. Fails closed in production: if `JWT_SECRET`
+ * is missing or too weak, an error is thrown instead of falling back to a
+ * publicly-known default (which would allow token forgery).
+ */
+export function getJwtSecret(): Uint8Array {
+  const secret = process.env.JWT_SECRET;
+  if (secret) {
+    if (secret.length < 32) {
+      console.warn(
+        "[auth] JWT_SECRET is shorter than the recommended 32 characters. Use `openssl rand -base64 32`."
+      );
+    }
+    return new TextEncoder().encode(secret);
+  }
+  // No secret set: never fall back to a public default in production.
+  if (process.env.NODE_ENV === "production") {
+    throw new Error(
+      "JWT_SECRET must be set in production (recommended: a random string of at least 32 characters)."
+    );
+  }
+  console.warn(
+    "[auth] JWT_SECRET is not set; using an insecure development fallback. Set JWT_SECRET before deploying."
+  );
+  return new TextEncoder().encode(DEV_FALLBACK_SECRET);
+}
+
+/**
+ * Whether the given email is configured as an administrator via the
+ * `ADMIN_EMAILS` environment variable (comma-separated, case-insensitive).
+ */
+export function isAdminEmail(email: string | null | undefined): boolean {
+  if (!email) return false;
+  const list = (process.env.ADMIN_EMAILS || "")
+    .split(",")
+    .map((e) => e.trim().toLowerCase())
+    .filter(Boolean);
+  return list.includes(email.toLowerCase());
+}
 
 export interface JWTPayload {
   sub: string;
@@ -32,12 +70,12 @@ export async function signToken(userId: string): Promise<string> {
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
     .setExpirationTime(TOKEN_EXPIRY)
-    .sign(JWT_SECRET);
+    .sign(getJwtSecret());
 }
 
 export async function verifyToken(token: string): Promise<JWTPayload | null> {
   try {
-    const { payload } = await jwtVerify(token, JWT_SECRET);
+    const { payload } = await jwtVerify(token, getJwtSecret());
     return payload as unknown as JWTPayload;
   } catch {
     return null;

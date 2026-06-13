@@ -44,3 +44,15 @@ next-env.d.ts
 # uploads
 /public/uploads/*
 !/public/uploads/.gitkeep
+
+# AI assistant config / rules (kept local, not published)
+AGENTS.md
+CLAUDE.md
+.qoder/
+.cursor/
+.windsurfrules
+.clinerules
+.github/copilot-instructions.md
+
+# vercel deploy helper scratch dir
+.vercel-tmp/

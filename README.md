@@ -1,5 +1,7 @@
 # CardVault
 
+> 简体中文 | [English](./README.en.md)
+
 基于 AI 的名片管理 Web 应用，支持拍照/上传名片自动识别、多维度检索、批量管理，适配桌面与移动端。
 
 ---
@@ -105,7 +107,8 @@ prisma/                    # Schema & 数据库迁移
 | 变量 | 说明 |
 |------|------|
 | `DATABASE_URL` | PostgreSQL 连接字符串 |
-| `JWT_SECRET` | JWT 签名密钥（≥ 32 位随机字符串） |
+| `JWT_SECRET` | JWT 签名密钥（≥ 32 位随机字符串，生产环境必填） |
+| `ADMIN_EMAILS` | 管理员邮箱（逗号分隔），用该邮箱 Google 登录即获管理员权限 |
 | `LLM_PROVIDER` | `claude` 或 `alibaba` |
 | `CLAUDE_API_KEY` | Anthropic API Key |
 | `CLAUDE_MODEL` | 如 `claude-sonnet-4.6` |

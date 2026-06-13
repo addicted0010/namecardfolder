@@ -14,6 +14,15 @@ async function main() {
   const password = process.env.SEED_PASSWORD || "admin123";
   const displayName = process.env.SEED_DISPLAY_NAME || "Administrator";
 
+  // The admin account is linked to the first email in ADMIN_EMAILS so that
+  // signing in with that Google account binds to (and unlocks admin on) this
+  // user. The email is no longer hardcoded in a migration.
+  const adminEmail =
+    (process.env.ADMIN_EMAILS || "")
+      .split(",")
+      .map((e) => e.trim())
+      .filter(Boolean)[0] || null;
+
   const existing = await prisma.user.findUnique({ where: { username } });
   if (existing) {
     console.log(`User "${username}" already exists, skipping user seed.`);
@@ -23,6 +32,7 @@ async function main() {
     await prisma.user.create({
       data: {
         username,
+        email: adminEmail,
         passwordHash,
         displayName,
         isAdmin: true,

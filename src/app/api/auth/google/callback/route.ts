@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { jwtVerify } from "jose";
 import { prisma } from "@/lib/prisma";
-import { signToken, setAuthCookie } from "@/lib/auth";
+import { signToken, setAuthCookie, getJwtSecret, isAdminEmail } from "@/lib/auth";
 
 const GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token";
 const GOOGLE_USERINFO_URL = "https://www.googleapis.com/oauth2/v3/userinfo";
@@ -47,12 +47,8 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const stateSecret = new TextEncoder().encode(
-      process.env.JWT_SECRET || "fallback-secret"
-    );
-
     try {
-      const { payload } = await jwtVerify(stateCookie, stateSecret);
+      const { payload } = await jwtVerify(stateCookie, getJwtSecret());
       if (payload.state !== state) {
         return NextResponse.redirect(
           new URL(`${loginUrl}?error=state_mismatch`, request.url)
@@ -111,21 +107,24 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    const emailVerified = googleUser.email_verified === true;
+
     // Find or create user
     let user = await prisma.user.findFirst({
       where: { googleId: googleUser.sub },
     });
 
     if (!user) {
-      // Try to find by email and link the Google account
-      user = await prisma.user.findFirst({
-        where: { email: googleUser.email },
-      });
+      // Only auto-link to an existing account when Google has verified the
+      // email, otherwise an unverified email could hijack another account.
+      const existingByEmail = emailVerified
+        ? await prisma.user.findFirst({ where: { email: googleUser.email } })
+        : null;
 
-      if (user) {
+      if (existingByEmail) {
         // Link Google account to existing user
         user = await prisma.user.update({
-          where: { id: user.id },
+          where: { id: existingByEmail.id },
           data: { googleId: googleUser.sub },
         });
       } else {
@@ -150,6 +149,14 @@ export async function GET(request: NextRequest) {
           },
         });
       }
+    }
+
+    // Grant admin rights when the verified email is configured in ADMIN_EMAILS.
+    if (emailVerified && isAdminEmail(googleUser.email) && !user.isAdmin) {
+      user = await prisma.user.update({
+        where: { id: user.id },
+        data: { isAdmin: true },
+      });
     }
 
     // Issue JWT token and set cookie (same as password login)

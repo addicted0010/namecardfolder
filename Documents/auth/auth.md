@@ -80,8 +80,19 @@ Cookie 配置：
 ```typescript
 authenticate()           // 验证当前请求，返回 { userId } 或 null
 authenticateOrThrow()    // 同上，但未认证时抛出异常
-getCurrentUser()         // 查询完整用户信息
+getCurrentUser()         // 查询完整用户信息（含 isAdmin 标识）
 ```
+
+### 5. 权限控制（管理员）
+
+用户表包含 `isAdmin` 布尔字段（默认 `false`）。管理员标识由 `getCurrentUser()` 返回，并通过 `/api/auth/me` 暴露给前端。当前仅用于控制 **LLM 调试日志**的可见性：只有管理员用户在名片详情页才会看到「查看日志」按钮。
+
+**如何指定管理员**（不在仓库中硬编码任何邮箱）：
+
+1. **环境变量 `ADMIN_EMAILS`**（逗号分隔，大小写不敏感）：当用户通过 Google 登录、且其 **已验证邮箱**（`email_verified === true`）命中该列表时，回调逻辑会自动将该用户 `isAdmin` 置为 `true`（`src/app/api/auth/google/callback/route.ts` 中的 `isAdminEmail()` 判定）。该机制只提升、不降级。
+2. **种子账户**：`npm run db:seed` 创建的初始账户默认 `isAdmin: true`，其 `email` 取自 `ADMIN_EMAILS` 的第一项——这样用同一邮箱的 Google 账号登录会绑定到该管理员账户（取代了过去在迁移文件中硬编码邮箱的做法）。
+
+> 安全说明：`getJwtSecret()` 不再回退到公开的默认密钥。生产环境若 `JWT_SECRET` 缺失会直接抛错（fail-closed）；密钥短于 32 位仅打印警告。`middleware.ts` 在 Edge 运行时内联了同样的逻辑。
 
 ## 中间件 (middleware.ts)
 

@@ -1,2 +1,6 @@
--- Link admin account with Google email for OAuth auto-binding
-UPDATE "User" SET "email" = 'addicted0010@gmail.com' WHERE "username" = 'admin';
+-- Link admin account with Google email for OAuth auto-binding.
+--
+-- The admin's email is no longer hardcoded here. Administrator designation is
+-- now driven by the ADMIN_EMAILS environment variable (see prisma/seed.ts and
+-- src/app/api/auth/google/callback/route.ts). This migration is intentionally
+-- kept as a historical no-op so existing migration histories stay intact.
