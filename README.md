@@ -4,9 +4,9 @@
 
 **珍藏每一次相遇。** CardVault 是一个面向个人与小团队的 AI 名片管理 Web 应用：拍下名片正反面，自动识别联系人信息，并把“在哪里、什么时候收到这张名片”的来源信息一起保存，方便之后搜索和回忆。
 
-<video src="./public/videos/cardvault_demo_zh.mp4" controls muted playsinline width="320"></video>
+<video src="https://github.com/addicted0010/namecardfolder/raw/develop/public/videos/cardvault_demo_zh.mp4" controls muted playsinline width="320"></video>
 
-[观看中文演示视频](./public/videos/cardvault_demo_zh.mp4)
+[观看中文演示视频](https://github.com/addicted0010/namecardfolder/raw/develop/public/videos/cardvault_demo_zh.mp4)
 
 ## 你可以用它做什么
 
