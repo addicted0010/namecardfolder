@@ -135,6 +135,7 @@ export default function CardsPage() {
   }
 
   function handleSearchChange(value: string) {
+    if (value === search) return;
     setSearch(value);
     setPage(1);
   }

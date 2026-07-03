@@ -2,7 +2,7 @@
 
 import { useTranslations } from "next-intl";
 import { Search, X } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 
 interface CardSearchProps {
   value: string;
@@ -13,12 +13,22 @@ export function CardSearch({ value, onChange }: CardSearchProps) {
   const t = useTranslations("cards");
   const [localValue, setLocalValue] = useState(value);
 
+  // Keep the latest onChange in a ref so the debounce timer below only
+  // resets when the input text actually changes, not whenever the parent
+  // re-renders and passes a new (but equivalent) onChange function.
+  // Otherwise unrelated parent state updates (e.g. pagination) would
+  // reschedule this timer and eventually re-fire onChange, resetting page.
+  const onChangeRef = useRef(onChange);
+  useEffect(() => {
+    onChangeRef.current = onChange;
+  }, [onChange]);
+
   useEffect(() => {
     const timer = setTimeout(() => {
-      onChange(localValue);
+      onChangeRef.current(localValue);
     }, 300);
     return () => clearTimeout(timer);
-  }, [localValue, onChange]);
+  }, [localValue]);
 
   return (
     <div className="relative">
