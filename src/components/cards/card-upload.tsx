@@ -24,9 +24,19 @@ interface CardUploadProps {
   onUploadComplete: (frontId?: string, backId?: string, source?: string) => Promise<void> | void;
   onClose: () => void;
   creditStatus: DailyCreditStatus | null;
+  initialSource?: string;
+  title?: string;
+  submitLabel?: string;
 }
 
-export function CardUpload({ onUploadComplete, onClose, creditStatus }: CardUploadProps) {
+export function CardUpload({
+  onUploadComplete,
+  onClose,
+  creditStatus,
+  initialSource,
+  title,
+  submitLabel,
+}: CardUploadProps) {
   const t = useTranslations("cards");
   const tc = useTranslations("common");
 
@@ -36,7 +46,8 @@ export function CardUpload({ onUploadComplete, onClose, creditStatus }: CardUplo
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [source, setSource] = useState(() =>
-    typeof window === "undefined" ? "" : localStorage.getItem("cardUploadSource") || ""
+    initialSource ??
+    (typeof window === "undefined" ? "" : localStorage.getItem("cardUploadSource") || "")
   );
 
   // Camera state (desktop webcam modal)
@@ -299,7 +310,7 @@ export function CardUpload({ onUploadComplete, onClose, creditStatus }: CardUplo
       {phase === "idle" && (
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <h3 className="text-sm font-medium text-gray-700">{t("upload")}</h3>
+            <h3 className="text-sm font-medium text-gray-700">{title || t("upload")}</h3>
             <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded-lg">
               <X className="w-4 h-4 text-gray-400" />
             </button>
@@ -334,7 +345,7 @@ export function CardUpload({ onUploadComplete, onClose, creditStatus }: CardUplo
       {/* PROCESSING: front side being processed */}
       {phase === "processing" && (
         <div className="space-y-3">
-          <h3 className="text-sm font-medium text-gray-700">{t("upload")}</h3>
+          <h3 className="text-sm font-medium text-gray-700">{title || t("upload")}</h3>
           {renderProcessing()}
         </div>
       )}
@@ -374,7 +385,7 @@ export function CardUpload({ onUploadComplete, onClose, creditStatus }: CardUplo
               className="flex-1 py-2 px-4 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50 flex items-center justify-center gap-2"
             >
               {submitting && <Loader2 className="w-4 h-4 animate-spin" />}
-              {t("startUpload")}
+              {submitLabel || t("startUpload")}
             </button>
             <button
               onClick={onClose}
@@ -437,7 +448,7 @@ export function CardUpload({ onUploadComplete, onClose, creditStatus }: CardUplo
               className="flex-1 py-2 px-4 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50 flex items-center justify-center gap-2"
             >
               {submitting && <Loader2 className="w-4 h-4 animate-spin" />}
-              {t("startUpload")}
+              {submitLabel || t("startUpload")}
             </button>
             <button
               onClick={onClose}

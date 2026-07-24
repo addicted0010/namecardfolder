@@ -1,20 +1,21 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useTranslations } from "next-intl";
-import { useParams, useSearchParams } from "next/navigation";
+import { useParams } from "next/navigation";
 import { useRouter } from "@/i18n/navigation";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/auth-context";
 import {
   ArrowLeft,
+  Camera,
   Loader2,
   Trash2,
   Save,
-  Wand2,
   FileText,
 } from "lucide-react";
 import { LlmLogViewer } from "@/components/debug/llm-log-viewer";
+import { CardUpload } from "@/components/cards/card-upload";
 
 interface CardImage {
   id: string;
@@ -46,6 +47,12 @@ interface CardData {
   llmLogs: { id: string; provider: string; model: string; durationMs: number; responseStatus: number; createdAt: string }[];
 }
 
+interface DailyCreditStatus {
+  limit: number | null;
+  remaining: number | null;
+  isUnlimited: boolean;
+}
+
 export default function CardDetailPage() {
   const t = useTranslations("cards");
   const tc = useTranslations("common");
@@ -53,62 +60,48 @@ export default function CardDetailPage() {
   const { user } = useAuth();
   const params = useParams();
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const autoRecognized = useRef(false);
   const [card, setCard] = useState<CardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [recognizing, setRecognizing] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [showUpdate, setShowUpdate] = useState(false);
+  const [creditStatus, setCreditStatus] = useState<DailyCreditStatus | null>(null);
   const [showLogs, setShowLogs] = useState(false);
   const [form, setForm] = useState<Record<string, string>>({});
 
   const id = params.id as string;
 
   useEffect(() => {
-    fetchCard();
-  }, [id]);
-
-  // Auto-trigger recognition when navigated from upload with ?autoRecognize=1
-  useEffect(() => {
-    if (
-      !autoRecognized.current &&
-      card &&
-      searchParams.get("autoRecognize") === "1" &&
-      card.recognitionStatus === "PENDING" &&
-      card.images.length > 0
-    ) {
-      autoRecognized.current = true;
-      handleRecognize();
+    async function loadCard() {
+      try {
+        const res = await fetch(`/api/cards/${id}`);
+        if (!res.ok) throw new Error("Failed to load card");
+        const data = await res.json();
+        setCard(data);
+        setForm({
+          fullName: data.fullName || "",
+          nameReading: data.nameReading || "",
+          company: data.company || "",
+          title: data.title || "",
+          email: data.email || "",
+          phone: data.phone || "",
+          mobilePhone: data.mobilePhone || "",
+          address: data.address || "",
+          website: data.website || "",
+          department: data.department || "",
+          fax: data.fax || "",
+          notes: data.notes || "",
+          source: data.source || "",
+        });
+      } catch {
+        toast.error(tc("error"));
+      } finally {
+        setLoading(false);
+      }
     }
-  }, [card, searchParams]);
 
-  async function fetchCard() {
-    try {
-      const res = await fetch(`/api/cards/${id}`);
-      if (!res.ok) throw new Error("Failed to load card");
-      const data = await res.json();
-      setCard(data);
-      setForm({
-        fullName: data.fullName || "",
-        nameReading: data.nameReading || "",
-        company: data.company || "",
-        title: data.title || "",
-        email: data.email || "",
-        phone: data.phone || "",
-        mobilePhone: data.mobilePhone || "",
-        address: data.address || "",
-        website: data.website || "",
-        department: data.department || "",
-        fax: data.fax || "",
-        notes: data.notes || "",
-        source: data.source || "",
-      });
-    } catch {
-      toast.error(tc("error"));
-    } finally {
-      setLoading(false);
-    }
-  }
+    loadCard();
+  }, [id, tc]);
 
   async function handleSave() {
     setSaving(true);
@@ -134,42 +127,9 @@ export default function CardDetailPage() {
     }
   }
 
-  async function handleRecognize() {
-    setRecognizing(true);
-    try {
-      const res = await fetch(`/api/cards/${id}/recognize`, { method: "POST" });
-      if (!res.ok) {
-        const errData = await res.json().catch(() => null);
-        throw new Error(errData?.error?.message || `HTTP ${res.status}`);
-      }
-      const data = await res.json();
-      setCard(data);
-      setForm({
-        fullName: data.fullName || "",
-        nameReading: data.nameReading || "",
-        company: data.company || "",
-        title: data.title || "",
-        email: data.email || "",
-        phone: data.phone || "",
-        mobilePhone: data.mobilePhone || "",
-        address: data.address || "",
-        website: data.website || "",
-        department: data.department || "",
-        fax: data.fax || "",
-        notes: data.notes || "",
-        source: data.source || "",
-      });
-      toast.success(t("recognizeSuccess"));
-    } catch (e) {
-      console.error("Recognition failed:", e);
-      toast.error(e instanceof Error ? e.message : t("recognizeFailed"));
-    } finally {
-      setRecognizing(false);
-    }
-  }
-
   async function handleDelete() {
-    if (!confirm(t("deleteConfirm"))) return;
+    if (!confirm(t("deleteCardConfirm"))) return;
+    setDeleting(true);
     try {
       const res = await fetch(`/api/cards/${id}`, { method: "DELETE" });
       if (!res.ok) throw new Error("Failed to delete");
@@ -177,7 +137,67 @@ export default function CardDetailPage() {
       router.push("/cards");
     } catch {
       toast.error(tc("error"));
+      setDeleting(false);
     }
+  }
+
+  async function handleOpenUpdate() {
+    try {
+      const res = await fetch("/api/credits");
+      if (res.ok) {
+        const data = await res.json();
+        setCreditStatus(data.creditStatus);
+      }
+    } catch {
+      setCreditStatus(null);
+    }
+    setShowUpdate(true);
+  }
+
+  async function handleUpdateComplete(
+    frontImageId?: string,
+    backImageId?: string,
+    source?: string
+  ) {
+    const res = await fetch(`/api/cards/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ frontImageId, backImageId, source }),
+    });
+    const data = await res.json().catch(() => null);
+
+    if (!res.ok) {
+      const message =
+        data?.error?.code === "DAILY_CREDIT_LIMIT_EXCEEDED"
+          ? t("creditLimitExceeded")
+          : data?.error?.message || t("updateFailed");
+      throw new Error(message);
+    }
+
+    setCard(data);
+    setForm({
+      fullName: data.fullName || "",
+      nameReading: data.nameReading || "",
+      company: data.company || "",
+      title: data.title || "",
+      email: data.email || "",
+      phone: data.phone || "",
+      mobilePhone: data.mobilePhone || "",
+      address: data.address || "",
+      website: data.website || "",
+      department: data.department || "",
+      fax: data.fax || "",
+      notes: data.notes || "",
+      source: data.source || "",
+    });
+    setShowUpdate(false);
+    if (data.creditStatus) {
+      setCreditStatus(data.creditStatus);
+      window.dispatchEvent(new Event("cardvault:credits-updated"));
+    }
+    toast.success(
+      data.recognitionResult === "SUCCESS" ? t("updateSuccess") : t("updateRecognitionPending")
+    );
   }
 
   const fields: { key: string; label: string }[] = [
@@ -235,16 +255,24 @@ export default function CardDetailPage() {
             </button>
           )}
           <button
-            onClick={handleRecognize}
-            disabled={recognizing || card.images.length === 0}
-            className="px-3 py-1.5 text-sm bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 flex items-center gap-1.5"
+            onClick={handleOpenUpdate}
+            disabled={deleting}
+            className="px-3 py-1.5 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center gap-1.5"
           >
-            {recognizing ? (
+            <Camera className="w-4 h-4" />
+            {t("update")}
+          </button>
+          <button
+            onClick={handleDelete}
+            disabled={deleting}
+            className="px-3 py-1.5 text-sm border border-red-300 text-red-600 rounded-lg hover:bg-red-50 disabled:opacity-50 flex items-center gap-1.5"
+          >
+            {deleting ? (
               <Loader2 className="w-4 h-4 animate-spin" />
             ) : (
-              <Wand2 className="w-4 h-4" />
+              <Trash2 className="w-4 h-4" />
             )}
-            {card.recognitionStatus === "SUCCESS" ? t("reRecognize") : t("recognize")}
+            {tc("delete")}
           </button>
         </div>
       </div>
@@ -344,16 +372,24 @@ export default function CardDetailPage() {
               <Save className="w-4 h-4" />
               {tc("save")}
             </button>
-            <button
-              onClick={handleDelete}
-              className="px-4 py-2 border border-red-300 text-red-600 rounded-lg text-sm font-medium hover:bg-red-50 flex items-center gap-2"
-            >
-              <Trash2 className="w-4 h-4" />
-              {tc("delete")}
-            </button>
           </div>
         </div>
       </div>
+
+      {showUpdate && (
+        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4 overflow-y-auto">
+          <div className="w-full max-w-md my-8">
+            <CardUpload
+              onUploadComplete={handleUpdateComplete}
+              onClose={() => setShowUpdate(false)}
+              creditStatus={creditStatus}
+              initialSource={form.source || ""}
+              title={t("updateCard")}
+              submitLabel={t("update")}
+            />
+          </div>
+        </div>
+      )}
 
       {/* LLM Log Viewer Modal */}
       {showLogs && (
