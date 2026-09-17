@@ -2,8 +2,8 @@ import { NextRequest } from "next/server";
 import { authenticate } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { readFile } from "fs/promises";
-import { join } from "path";
 import { AliyunOSSProvider } from "@/lib/storage/aliyun-oss";
+import { getLocalUploadPath } from "@/lib/storage/local-storage";
 
 export async function GET(
   request: NextRequest,
@@ -18,15 +18,15 @@ export async function GET(
 
   const image = await prisma.cardImage.findUnique({
     where: { id },
-    include: { card: { select: { userId: true } } },
   });
 
   if (!image) {
     return new Response("Not found", { status: 404 });
   }
 
-  // Verify ownership: image must belong to user's card (or be an orphan uploaded by session)
-  if (image.card && image.card.userId !== auth.userId) {
+  // Verify ownership: every image (including orphans not yet attached to a
+  // card) carries the uploader's userId.
+  if (image.userId !== auth.userId) {
     return new Response("Forbidden", { status: 403 });
   }
 
@@ -35,9 +35,9 @@ export async function GET(
     let contentType = image.mimeType || "image/jpeg";
 
     if (image.storageUrl.startsWith("/uploads/")) {
-      // Local storage: read from filesystem
-      const filePath = join(process.cwd(), "public", image.storageUrl);
-      buffer = await readFile(filePath);
+      // Local storage: read from the private upload directory
+      const storageKey = image.storageUrl.replace(/^\/uploads\//, "");
+      buffer = await readFile(getLocalUploadPath(storageKey));
     } else if (image.storageUrl.startsWith("oss://")) {
       // Aliyun OSS: redirect to signed URL for direct access (faster)
       const storageKey = image.storageUrl.replace("oss://", "");

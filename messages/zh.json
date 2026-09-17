@@ -47,8 +47,7 @@
     "currentPasswordWrong": "当前密码错误",
     "newPasswordSameAsOld": "新密码不能与当前密码相同",
     "signInWithGoogle": "使用 Google 账号登录",
-    "orContinueWith": "或",
-    "googleOnlyAccount": "该账号使用 Google 登录，请点击下方 Google 登录按钮"
+    "orContinueWith": "或"
   },
   "cards": {
     "title": "名片管理",
@@ -68,6 +67,7 @@
     "deleteCardConfirm": "确定要删除当前这张名片吗？此操作无法撤销。",
     "deleteFailed": "删除失败",
     "deleteSuccess": "名片已删除",
+    "deletePartialFailed": "{failed} 张名片删除失败，请刷新后重试",
     "update": "更新",
     "updateCard": "更新名片",
     "updateSuccess": "名片已更新",

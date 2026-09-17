@@ -3,9 +3,24 @@
 import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
+import { routing } from "@/i18n/routing";
 import { useAuth } from "@/contexts/auth-context";
 import { toast } from "sonner";
 import { CreditCard, Loader2 } from "lucide-react";
+
+/**
+ * Validate a ?redirect= target set by the middleware: only same-site,
+ * locale-stripped relative paths are accepted (no open redirect).
+ */
+function resolveRedirectTarget(raw: string | null): string {
+  if (!raw || !raw.startsWith("/") || raw.startsWith("//")) return "/cards";
+  const segments = raw.split("/");
+  if ((routing.locales as readonly string[]).includes(segments[1])) {
+    const rest = "/" + segments.slice(2).join("/");
+    return rest === "/" ? "/cards" : rest;
+  }
+  return raw;
+}
 
 function GoogleIcon({ className }: { className?: string }) {
   return (
@@ -52,17 +67,14 @@ export default function LoginPage() {
       const data = await res.json();
 
       if (!res.ok) {
-        if (data.error?.code === "GOOGLE_ONLY_ACCOUNT") {
-          toast.error(t("googleOnlyAccount"));
-        } else {
-          toast.error(data.error?.message || t("invalidCredentials"));
-        }
+        toast.error(data.error?.message || t("invalidCredentials"));
         return;
       }
 
       login(data.user);
       toast.success(t("loginSuccess"));
-      router.push("/cards");
+      const redirect = new URLSearchParams(window.location.search).get("redirect");
+      router.push(resolveRedirectTarget(redirect));
     } catch {
       toast.error(t("invalidCredentials"));
     } finally {

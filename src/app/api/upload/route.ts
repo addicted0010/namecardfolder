@@ -3,6 +3,7 @@ import { authenticate } from "@/lib/auth";
 import { getStorageProvider } from "@/lib/storage";
 import { prisma } from "@/lib/prisma";
 import { apiResponse, apiError, ApiError } from "@/lib/utils";
+import { isRateLimited } from "@/lib/rate-limit";
 import sharp from "sharp";
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
@@ -13,6 +14,11 @@ export async function POST(request: NextRequest) {
     const auth = await authenticate();
     if (!auth) {
       throw new ApiError(401, "UNAUTHORIZED", "Authentication required");
+    }
+
+    // Upload throttle: 30 requests/hour per user (protects disk/blob quota).
+    if (isRateLimited(`upload:${auth.userId}`, 30, 60 * 60 * 1000)) {
+      throw new ApiError(429, "TOO_MANY_REQUESTS", "Too many uploads, try again later");
     }
 
     const formData = await request.formData();
@@ -62,6 +68,7 @@ export async function POST(request: NextRequest) {
     // Save record to database
     const cardImage = await prisma.cardImage.create({
       data: {
+        userId: auth.userId,
         side: side === "BACK" ? "BACK" : "FRONT",
         storageKey,
         storageUrl: url,

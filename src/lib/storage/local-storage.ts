@@ -1,9 +1,20 @@
 import { StorageProvider } from "./types";
 import { writeFile, unlink, mkdir } from "fs/promises";
-import { join } from "path";
+import { join, resolve, basename } from "path";
 import { randomUUID } from "crypto";
 
-const UPLOAD_DIR = join(process.cwd(), "public", "uploads");
+// Uploads live OUTSIDE public/ so they are never served statically without
+// authentication; all reads go through /api/images/[id].
+const UPLOAD_DIR = process.env.UPLOAD_DIR
+  ? resolve(process.env.UPLOAD_DIR)
+  : join(process.cwd(), "data", "uploads");
+
+const ALLOWED_EXTENSIONS = ["jpg", "jpeg", "png", "webp", "heic", "heif"];
+
+/** Absolute filesystem path for a local storage key (e.g. "2026/09/x.jpg"). */
+export function getLocalUploadPath(storageKey: string): string {
+  return join(UPLOAD_DIR, storageKey);
+}
 
 export class LocalStorageProvider implements StorageProvider {
   async upload(
@@ -18,7 +29,8 @@ export class LocalStorageProvider implements StorageProvider {
 
     await mkdir(dir, { recursive: true });
 
-    const ext = filename.split(".").pop() || "jpg";
+    const rawExt = (basename(filename).split(".").pop() || "").toLowerCase();
+    const ext = ALLOWED_EXTENSIONS.includes(rawExt) ? rawExt : "jpg";
     const uniqueName = `${randomUUID()}.${ext}`;
     const storageKey = `${year}/${month}/${uniqueName}`;
     const filePath = join(dir, uniqueName);

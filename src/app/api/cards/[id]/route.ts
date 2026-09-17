@@ -30,6 +30,15 @@ export async function GET(
         llmLogs: {
           orderBy: { createdAt: "desc" },
           take: 10,
+          select: {
+            id: true,
+            provider: true,
+            model: true,
+            responseStatus: true,
+            durationMs: true,
+            errorMessage: true,
+            createdAt: true,
+          },
         },
       },
     });
@@ -107,7 +116,14 @@ export async function PUT(
     const data: Record<string, string | null> = {};
     for (const field of allowedFields) {
       if (field in body) {
-        data[field] = body[field] || null;
+        const value = body[field];
+        if (value !== null && typeof value !== "string") {
+          throw new ApiError(400, "INVALID_FIELD", `Field "${field}" must be a string`);
+        }
+        if (typeof value === "string" && value.length > 2000) {
+          throw new ApiError(400, "FIELD_TOO_LONG", `Field "${field}" exceeds 2000 characters`);
+        }
+        data[field] = value || null;
       }
     }
 
@@ -161,7 +177,7 @@ export async function PATCH(
 
     const creditStatus = await prisma.$transaction(async (tx) => {
       const newImages = await tx.cardImage.findMany({
-        where: { id: { in: imageIds }, cardId: null },
+        where: { id: { in: imageIds }, cardId: null, userId: auth.userId },
         select: { id: true },
       });
 
@@ -177,7 +193,7 @@ export async function PATCH(
 
       await tx.cardImage.deleteMany({ where: { cardId: id } });
       const attached = await tx.cardImage.updateMany({
-        where: { id: { in: imageIds }, cardId: null },
+        where: { id: { in: imageIds }, cardId: null, userId: auth.userId },
         data: { cardId: id },
       });
 
@@ -218,7 +234,19 @@ export async function PATCH(
       where: { id },
       include: {
         images: true,
-        llmLogs: { orderBy: { createdAt: "desc" }, take: 10 },
+        llmLogs: {
+          orderBy: { createdAt: "desc" },
+          take: 10,
+          select: {
+            id: true,
+            provider: true,
+            model: true,
+            responseStatus: true,
+            durationMs: true,
+            errorMessage: true,
+            createdAt: true,
+          },
+        },
       },
     });
 

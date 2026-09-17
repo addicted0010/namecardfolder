@@ -169,7 +169,7 @@ In **Settings → Environment Variables** of the Vercel project, add:
 | `CLAUDE_BASE_URL` | `https://api.anthropic.com` (or a proxy) | Claude API endpoint |
 | `CLAUDE_API_KEY` | Your Claude API key | Claude credential |
 | `CLAUDE_MODEL` | `claude-sonnet-4.6` | Claude model |
-| `ALIBABA_BASE_URL` | `https://dashscope-intl.aliyuncs.com/compatible-mode/v1` | Bailian API endpoint |
+| `ALIBABA_BASE_URL` | `https://{WorkspaceId}.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1` | Bailian API endpoint (new Singapore URL) |
 | `ALIBABA_API_KEY` | Your Bailian API key | Bailian credential |
 | `ALIBABA_MODEL` | `qwen3.7-plus` | Bailian model |
 | `STORAGE_PROVIDER` | `aliyun-oss` | Use Alibaba OSS storage (recommended) |
@@ -179,7 +179,7 @@ In **Settings → Environment Variables** of the Vercel project, add:
 | `ALIYUN_OSS_REGION` | `oss-ap-southeast-1` | OSS region |
 | `ALIYUN_OSS_BUCKET` | Your bucket name | OSS bucket |
 | `ALIYUN_OSS_STS_ENDPOINT` | `https://sts.aliyuncs.com` | STS endpoint (optional) |
-| `CRON_SECRET` | Random string | Protects the cron endpoint (strongly recommended) |
+| `CRON_SECRET` | Random string | Protects the cron endpoint (**required** in production; cron returns 503 without it) |
 | `GOOGLE_CLIENT_ID` | OAuth client ID | Google OAuth (optional) |
 | `GOOGLE_CLIENT_SECRET` | OAuth client secret (mark as Sensitive) | Google OAuth (optional) |
 | `GOOGLE_REDIRECT_URI` | `https://yourdomain.com/api/auth/google/callback` | Google OAuth (optional) |
@@ -285,9 +285,10 @@ Replace `{WorkspaceId}` with your real Workspace ID in all region-specific URLs.
 | `ALIYUN_OSS_REGION` | OSS bucket region | `oss-ap-southeast-1` |
 | `ALIYUN_OSS_BUCKET` | OSS bucket name | `cardvault-images` |
 | `ALIYUN_OSS_STS_ENDPOINT` | STS service endpoint (optional) | `https://sts.aliyuncs.com` |
+| `UPLOAD_DIR` | Local storage directory (local mode only, optional) | `data/uploads` (default) |
 
 > **Storage modes**:
-> - `local`: development; images are stored in the local `public/uploads/` directory.
+> - `local`: development; images are stored in `data/uploads/` (outside `public/`, reachable only through the authenticated `/api/images/[id]` proxy). For legacy deployments with images in `public/uploads/`, run `npx tsx scripts/migrate-uploads-dir.ts` to migrate.
 > - `vercel`: uses the Vercel Blob Store in private mode, accessed through a backend API proxy.
 > - `aliyun-oss`: uses Alibaba OSS with STS temporary credentials. The image proxy API returns a 302 redirect to a signed OSS URL so the client downloads directly from OSS for better speed.
 

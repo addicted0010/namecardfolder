@@ -112,6 +112,13 @@ export async function authenticate(): Promise<{
   const payload = await verifyToken(token);
   if (!payload) return null;
 
+  // Reject tokens of deleted users (JWTs are otherwise valid until expiry).
+  const user = await prisma.user.findUnique({
+    where: { id: payload.sub },
+    select: { id: true },
+  });
+  if (!user) return null;
+
   return { userId: payload.sub };
 }
 

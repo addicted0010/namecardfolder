@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { jwtVerify } from "jose";
+import { randomBytes } from "crypto";
 import { prisma } from "@/lib/prisma";
 import { signToken, setAuthCookie, getJwtSecret, isAdminEmail } from "@/lib/auth";
+import { routing } from "@/i18n/routing";
 
 const GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token";
 const GOOGLE_USERINFO_URL = "https://www.googleapis.com/oauth2/v3/userinfo";
@@ -21,43 +23,47 @@ export async function GET(request: NextRequest) {
     const state = searchParams.get("state");
     const error = searchParams.get("error");
 
-    // Get locale for redirect
-    const locale = request.cookies.get("oauth_locale")?.value || "en";
+    // Get locale for redirect (whitelisted against routing.locales to avoid
+    // open redirects via a forged cookie value).
+    const rawLocale = request.cookies.get("oauth_locale")?.value;
+    const locale = (routing.locales as readonly string[]).includes(rawLocale ?? "")
+      ? rawLocale!
+      : routing.defaultLocale;
     const loginUrl = `/${locale}/login`;
+
+    // Redirect back to login while clearing one-time OAuth cookies.
+    const redirectLogin = (error: string) => {
+      const response = NextResponse.redirect(
+        new URL(`${loginUrl}?error=${error}`, request.url)
+      );
+      response.cookies.delete("google_oauth_state");
+      response.cookies.delete("oauth_locale");
+      return response;
+    };
 
     // Handle Google OAuth errors
     if (error) {
       console.error("Google OAuth error:", error);
-      return NextResponse.redirect(
-        new URL(`${loginUrl}?error=google_auth_failed`, request.url)
-      );
+      return redirectLogin("google_auth_failed");
     }
 
     if (!code || !state) {
-      return NextResponse.redirect(
-        new URL(`${loginUrl}?error=missing_params`, request.url)
-      );
+      return redirectLogin("missing_params");
     }
 
     // Verify state to prevent CSRF
     const stateCookie = request.cookies.get("google_oauth_state")?.value;
     if (!stateCookie) {
-      return NextResponse.redirect(
-        new URL(`${loginUrl}?error=invalid_state`, request.url)
-      );
+      return redirectLogin("invalid_state");
     }
 
     try {
       const { payload } = await jwtVerify(stateCookie, getJwtSecret());
       if (payload.state !== state) {
-        return NextResponse.redirect(
-          new URL(`${loginUrl}?error=state_mismatch`, request.url)
-        );
+        return redirectLogin("state_mismatch");
       }
     } catch {
-      return NextResponse.redirect(
-        new URL(`${loginUrl}?error=invalid_state`, request.url)
-      );
+      return redirectLogin("invalid_state");
     }
 
     // Exchange authorization code for tokens
@@ -79,9 +85,7 @@ export async function GET(request: NextRequest) {
 
     if (!tokenResponse.ok) {
       console.error("Google token exchange failed:", await tokenResponse.text());
-      return NextResponse.redirect(
-        new URL(`${loginUrl}?error=token_exchange_failed`, request.url)
-      );
+      return redirectLogin("token_exchange_failed");
     }
 
     const tokenData = await tokenResponse.json();
@@ -94,17 +98,13 @@ export async function GET(request: NextRequest) {
 
     if (!userInfoResponse.ok) {
       console.error("Google userinfo fetch failed:", await userInfoResponse.text());
-      return NextResponse.redirect(
-        new URL(`${loginUrl}?error=userinfo_failed`, request.url)
-      );
+      return redirectLogin("userinfo_failed");
     }
 
     const googleUser: GoogleUserInfo = await userInfoResponse.json();
 
     if (!googleUser.email) {
-      return NextResponse.redirect(
-        new URL(`${loginUrl}?error=no_email`, request.url)
-      );
+      return redirectLogin("no_email");
     }
 
     const emailVerified = googleUser.email_verified === true;
@@ -139,15 +139,37 @@ export async function GET(request: NextRequest) {
           suffix++;
         }
 
-        user = await prisma.user.create({
-          data: {
-            username,
-            email: googleUser.email,
-            googleId: googleUser.sub,
-            displayName: googleUser.name || null,
-            passwordHash: null,
-          },
-        });
+        try {
+          user = await prisma.user.create({
+            data: {
+              username,
+              email: googleUser.email,
+              googleId: googleUser.sub,
+              displayName: googleUser.name || null,
+              passwordHash: null,
+            },
+          });
+        } catch (createError) {
+          // Concurrent first logins can race the username uniqueness check;
+          // retry once with a random suffix instead of failing the login.
+          if (
+            createError instanceof Error &&
+            "code" in createError &&
+            (createError as { code: string }).code === "P2002"
+          ) {
+            user = await prisma.user.create({
+              data: {
+                username: `${baseUsername}_${randomBytes(3).toString("hex")}`,
+                email: googleUser.email,
+                googleId: googleUser.sub,
+                displayName: googleUser.name || null,
+                passwordHash: null,
+              },
+            });
+          } else {
+            throw createError;
+          }
+        }
       }
     }
 
@@ -173,9 +195,15 @@ export async function GET(request: NextRequest) {
     return response;
   } catch (error) {
     console.error("Google OAuth callback error:", error);
-    const locale = request.cookies.get("oauth_locale")?.value || "en";
-    return NextResponse.redirect(
+    const rawLocale = request.cookies.get("oauth_locale")?.value;
+    const locale = (routing.locales as readonly string[]).includes(rawLocale ?? "")
+      ? rawLocale!
+      : routing.defaultLocale;
+    const response = NextResponse.redirect(
       new URL(`/${locale}/login?error=unexpected`, request.url)
     );
+    response.cookies.delete("google_oauth_state");
+    response.cookies.delete("oauth_locale");
+    return response;
   }
 }

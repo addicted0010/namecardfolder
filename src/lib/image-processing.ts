@@ -14,7 +14,7 @@ export async function processCardImage(
   oldStorageUrl: string,
   mimeType: string,
   filename: string
-): Promise<{ storageKey: string; url: string; sizeBytes: number; log: LLMLogEntry; orientationLog: LLMLogEntry; buffer: Buffer }> {
+): Promise<{ storageKey: string; url: string; sizeBytes: number; log: LLMLogEntry; orientationLog: LLMLogEntry; buffer: Buffer; cleanupOld: () => Promise<void> }> {
   // Step 1: Create preview buffer for LLM (rotated + resized)
   const previewBuffer = await sharp(rawBuffer)
     .rotate() // auto-orient from EXIF
@@ -38,6 +38,12 @@ export async function processCardImage(
   });
 
   // Step 4: Validate detection result
+  // 429 must be surfaced as a retryable rate-limit error BEFORE the generic
+  // error throw, otherwise the queue's backoff/retry path is unreachable.
+  if (log.responseStatus === 429) {
+    throw new ApiError(429, "LLM_RATE_LIMITED", "Upstream LLM rate limited");
+  }
+
   if (log.errorMessage) {
     throw new ApiError(502, "PROCESSING_FAILED", `LLM error: ${log.errorMessage}`);
   }
@@ -47,6 +53,11 @@ export async function processCardImage(
   }
 
   const { x1, y1, x2, y2 } = result.boundingBox;
+
+  // Guard against malformed model output (null / strings / NaN)
+  if (![x1, y1, x2, y2].every((v) => typeof v === "number" && Number.isFinite(v))) {
+    throw new ApiError(422, "INVALID_DETECTION", "Detection bounding box is invalid");
+  }
 
   // Step 5: Add 5% padding around detected box
   const padX = 50; // 5% of 1000
@@ -119,6 +130,9 @@ export async function processCardImage(
       side: "FRONT",
     });
     orientLog = verifyLog;
+    if (orientLog.responseStatus === 429) {
+      throw new ApiError(429, "LLM_RATE_LIMITED", "Upstream LLM rate limited");
+    }
     // If LLM says rotated image needs 0 rotation, 90° was correct
     // If LLM says it needs 180°, then we need 270° instead (90+180=270)
     if (verifyResult.rotation === 0) {
@@ -136,6 +150,9 @@ export async function processCardImage(
       side: "FRONT",
     });
     orientLog = oLog;
+    if (orientLog.responseStatus === 429) {
+      throw new ApiError(429, "LLM_RATE_LIMITED", "Upstream LLM rate limited");
+    }
     orientResult = result;
   }
 
@@ -147,9 +164,10 @@ export async function processCardImage(
       .toBuffer();
   }
 
-  // Step 10: Replace in storage (delete old + upload new)
+  // Step 10: Replace in storage. Upload the new object FIRST and only hand
+  // out the old-object cleanup after the caller persisted the new reference,
+  // so a failure never leaves the card without any image.
   const storage = getStorageProvider();
-  await storage.delete(oldStorageKey);
   const { storageKey, url } = await storage.upload(finalBuffer, filename, "image/jpeg");
 
   return {
@@ -159,5 +177,9 @@ export async function processCardImage(
     log,
     orientationLog: orientLog,
     buffer: finalBuffer,
+    cleanupOld: () =>
+      oldStorageKey === storageKey
+        ? Promise.resolve()
+        : storage.delete(oldStorageKey),
   };
 }

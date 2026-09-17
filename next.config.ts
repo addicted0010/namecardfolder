@@ -22,8 +22,9 @@ const nextConfig: NextConfig = {
     ],
   },
   serverExternalPackages: ["sharp", "bcryptjs", "ali-oss"],
+  // Extra dev origins (e.g. LAN IPs) can be added via DEV_ORIGINS="ip1,ip2".
   allowedDevOrigins: [
-    "100.85.207.42",
+    ...(process.env.DEV_ORIGINS ? process.env.DEV_ORIGINS.split(",") : []),
     "localhost",
   ],
 };

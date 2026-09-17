@@ -19,8 +19,8 @@ export async function GET(request: NextRequest) {
 
     const url = new URL(request.url);
     const q = url.searchParams.get("q") || "";
-    const page = Math.max(1, parseInt(url.searchParams.get("page") || "1"));
-    const pageSize = Math.min(50, Math.max(1, parseInt(url.searchParams.get("pageSize") || "12")));
+    const page = Math.max(1, parseInt(url.searchParams.get("page") || "1", 10) || 1);
+    const pageSize = Math.min(50, Math.max(1, parseInt(url.searchParams.get("pageSize") || "12", 10) || 12));
 
     const where: Record<string, unknown> = { userId: auth.userId };
 
@@ -82,7 +82,7 @@ export async function POST(request: NextRequest) {
 
     const { card, creditStatus } = await prisma.$transaction(async (tx) => {
       const images = await tx.cardImage.findMany({
-        where: { id: { in: imageIds }, cardId: null },
+        where: { id: { in: imageIds }, cardId: null, userId: auth.userId },
         select: { id: true },
       });
 
@@ -100,10 +100,14 @@ export async function POST(request: NextRequest) {
         },
       });
 
-      await tx.cardImage.updateMany({
-        where: { id: { in: imageIds }, cardId: null },
+      const attached = await tx.cardImage.updateMany({
+        where: { id: { in: imageIds }, cardId: null, userId: auth.userId },
         data: { cardId: card.id },
       });
+
+      if (attached.count !== imageIds.length) {
+        throw new ApiError(409, "IMAGE_UPDATE_CONFLICT", "Images could not be attached");
+      }
 
       const updatedCard = await tx.card.findUnique({
         where: { id: card.id },

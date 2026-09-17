@@ -169,7 +169,7 @@ git push origin main
 | `CLAUDE_BASE_URL` | `https://api.anthropic.com`（或代理地址） | Claude API 地址 |
 | `CLAUDE_API_KEY` | 你的 Claude API Key | Claude 密钥 |
 | `CLAUDE_MODEL` | `claude-sonnet-4.6` | Claude 模型 |
-| `ALIBABA_BASE_URL` | `https://dashscope-intl.aliyuncs.com/compatible-mode/v1` | 百炼 API 地址 |
+| `ALIBABA_BASE_URL` | `https://{WorkspaceId}.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1` | 百炼 API 地址（新加坡新版端点） |
 | `ALIBABA_API_KEY` | 你的百炼 API Key | 百炼密钥 |
 | `ALIBABA_MODEL` | `qwen3.7-plus` | 百炼模型 |
 | `STORAGE_PROVIDER` | `aliyun-oss` | 使用阿里云 OSS 存储（推荐） |
@@ -179,10 +179,14 @@ git push origin main
 | `ALIYUN_OSS_REGION` | `oss-ap-southeast-1` | OSS 区域 |
 | `ALIYUN_OSS_BUCKET` | 你的 Bucket 名称 | OSS Bucket |
 | `ALIYUN_OSS_STS_ENDPOINT` | `https://sts.aliyuncs.com` | STS 端点（可选） |
+| `CRON_SECRET` | 随机字符串 | 保护 cron 端点（**生产环境必填**，未设置时 cron 直接返回 503） |
+| `GOOGLE_CLIENT_ID` | OAuth Client ID | Google 登录（可选） |
+| `GOOGLE_CLIENT_SECRET` | OAuth Client Secret（建议标记为 Sensitive） | Google 登录（可选） |
+| `GOOGLE_REDIRECT_URI` | `https://你的域名/api/auth/google/callback` | Google 登录（可选） |
 | `CREDIT_TIME_ZONE` | `Asia/Tokyo` | 每日 credit 重置时区（可选，默认 `Asia/Tokyo`） |
 | `NEXT_PUBLIC_APP_URL` | 你的生产域名（如 `https://cardvault.example.com`） | 应用公开地址 |
 
-> **提示**：Vercel Postgres 创建后会自动注入数据库相关变量。阿里云 OSS 和 LLM 相关的变量需手动添加。
+> **提示**：Vercel Postgres 创建后会自动注入数据库相关变量。阿里云 OSS、LLM、Google OAuth 与 `CRON_SECRET` 需手动添加。`CRON_SECRET` 需与 Vercel Cron 请求头 `Authorization: Bearer <CRON_SECRET>` 一致（Vercel 部署时会自动携带同名环境变量）。
 
 ### 6. 运行数据库迁移
 
@@ -281,9 +285,10 @@ DATABASE_URL="postgresql://..." SEED_USERNAME=admin SEED_PASSWORD=你的密码 n
 | `ALIYUN_OSS_REGION` | OSS Bucket 所在区域 | `oss-ap-southeast-1` |
 | `ALIYUN_OSS_BUCKET` | OSS Bucket 名称 | `cardvault-images` |
 | `ALIYUN_OSS_STS_ENDPOINT` | STS 服务端点（可选） | `https://sts.aliyuncs.com` |
+| `UPLOAD_DIR` | 本地存储目录（仅 local 模式，可选） | `data/uploads`（默认） |
 
 > **存储模式说明**：
-> - `local`：开发环境，图片存储在本地 `public/uploads/` 目录。
+> - `local`：开发环境，图片存储在 `data/uploads/` 目录（位于 `public/` 之外，仅能通过带鉴权的 `/api/images/[id]` 代理访问）。历史部署如图片仍在 `public/uploads/`，可运行 `npx tsx scripts/migrate-uploads-dir.ts` 迁移。
 > - `vercel`：使用 Vercel Blob Store 私有模式，通过后端 API 代理访问。
 > - `aliyun-oss`：使用阿里云 OSS，通过 STS 临时令牌访问。图片代理 API 会返回 302 重定向到 OSS 签名 URL，客户端直接从 OSS 下载，速度更快。
 

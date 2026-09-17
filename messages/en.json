@@ -47,8 +47,7 @@
     "currentPasswordWrong": "Current password is incorrect",
     "newPasswordSameAsOld": "New password cannot be the same as current password",
     "signInWithGoogle": "Sign in with Google",
-    "orContinueWith": "or",
-    "googleOnlyAccount": "This account uses Google sign-in. Please use the Google button below."
+    "orContinueWith": "or"
   },
   "cards": {
     "title": "Business Cards",
@@ -68,6 +67,7 @@
     "deleteCardConfirm": "Delete this card? This action cannot be undone.",
     "deleteFailed": "Failed to delete",
     "deleteSuccess": "Card deleted",
+    "deletePartialFailed": "{failed} card(s) failed to delete, refresh and retry",
     "update": "Update",
     "updateCard": "Update Card",
     "updateSuccess": "Card updated",

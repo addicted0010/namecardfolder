@@ -27,7 +27,7 @@ graph TB
     Factory -->|STORAGE_PROVIDER=vercel| Blob[VercelBlobProvider]
     Factory -->|STORAGE_PROVIDER=aliyun-oss| OSS[AliyunOSSProvider]
     
-    Local --> FS[public/uploads/年/月/uuid.jpg]
+    Local --> FS[data/uploads/年/月/uuid.jpg]
     Blob --> VB[Vercel Blob Store private]
     OSS --> AliOSS[阿里云 OSS Bucket private]
     
@@ -55,7 +55,7 @@ interface StorageProvider {
 
 ### LocalStorageProvider（本地开发）
 
-- **存储位置**：`public/uploads/{year}/{month}/{uuid}.{ext}`
+- **存储位置**：`data/uploads/{year}/{month}/{uuid}.{ext}`（位于 `public/` 之外，可由 `UPLOAD_DIR` 环境变量覆盖；扩展名受白名单限制）
 - **命名规则**：UUID v4 + 原始扩展名
 - **URL 格式**：`/uploads/2026/05/xxxxxxxx.jpg`
 - **删除**：`fs.unlink()`，文件不存在时静默处理
@@ -136,9 +136,9 @@ GET /api/cards → 返回卡片数据（每张图片含 imageUrl 直链）→ �
 1. 前端：`<img src="/api/images/{imageId}" />`
 2. 代理 API 验证 JWT 登录状态
 3. 查询 `CardImage` 记录，确认图片存在
-4. 验证资源归属：`image.card.userId === auth.userId`
+4. 验证资源归属：`image.userId === auth.userId`（每张图片上传时即记录上传者，孤儿图片同样受保护）
 5. 根据 `storageUrl` 前缀判断存储类型：
-   - `/uploads/...` → 读取本地文件，返回图片 binary
+   - `/uploads/...` → 从私有目录 `data/uploads/`（位于 `public/` 之外，可由 `UPLOAD_DIR` 覆盖）读取本地文件，返回图片 binary
    - `oss://...` → 生成签名 URL，返回 **302 重定向**（客户端直连 OSS，速度快）
    - 其他 → 携带 Token 请求 Vercel Blob，返回图片 binary
 6. 缓存策略：`Cache-Control: private, max-age=3600`
@@ -147,8 +147,9 @@ GET /api/cards → 返回卡片数据（每张图片含 imageUrl 直链）→ �
 
 - 未登录 → 401 Unauthorized
 - 图片属于其他用户 → 403 Forbidden
-- 孤儿图片（未关联 Card）→ 允许访问（上传者可预览）
+- 孤儿图片（未关联 Card）→ 仅上传者可访问（按 `image.userId` 鉴权）
 - 图片不存在 → 404 Not Found
+- 本地文件存储在 `public/` 之外，无法绕过鉴权直接通过静态 URL 访问；上传扩展名受白名单限制（jpg/jpeg/png/webp/heic/heif）
 
 ## 图片预处理与识别阶段处理
 

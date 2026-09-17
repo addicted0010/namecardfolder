@@ -47,7 +47,10 @@ export function apiError(error: unknown) {
       { status: error.statusCode }
     );
   }
-  const message = error instanceof Error ? error.message : "An unexpected error occurred";
+  // Never leak internal error messages (Prisma/fs/SDK details) to clients.
+  const isProd = process.env.NODE_ENV === "production";
+  const message =
+    error instanceof Error && !isProd ? error.message : "An unexpected error occurred";
   console.error("Unexpected error:", error);
   return Response.json(
     { error: { code: "INTERNAL_ERROR", message } },

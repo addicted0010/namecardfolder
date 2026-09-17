@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { authenticate } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { apiResponse, apiError, ApiError } from "@/lib/utils";
+import { isRateLimited } from "@/lib/rate-limit";
 import { recognizeCard } from "@/lib/recognition-queue";
 import {
   DailyCreditLimitExceededError,
@@ -20,6 +21,11 @@ export async function POST(
     }
 
     const { id } = await params;
+
+    // Manual re-recognition triggers paid LLM calls: throttle per user.
+    if (isRateLimited(`recognize:${auth.userId}`, 20, 60 * 60 * 1000)) {
+      throw new ApiError(429, "TOO_MANY_REQUESTS", "Too many recognition requests, try again later");
+    }
 
     // Verify card ownership
     const card = await prisma.card.findFirst({
@@ -50,7 +56,22 @@ export async function POST(
     // Return updated card
     const updatedCard = await prisma.card.findUnique({
       where: { id },
-      include: { images: true, llmLogs: { orderBy: { createdAt: "desc" }, take: 5 } },
+      include: {
+        images: true,
+        llmLogs: {
+          orderBy: { createdAt: "desc" },
+          take: 5,
+          select: {
+            id: true,
+            provider: true,
+            model: true,
+            responseStatus: true,
+            durationMs: true,
+            errorMessage: true,
+            createdAt: true,
+          },
+        },
+      },
     });
 
     return apiResponse(updatedCard);

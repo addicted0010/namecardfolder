@@ -25,6 +25,10 @@ export async function DELETE(
       throw new ApiError(404, "NOT_FOUND", "Image not found");
     }
 
+    if (cardImage.userId !== auth.userId) {
+      throw new ApiError(403, "FORBIDDEN", "Image belongs to another user");
+    }
+
     if (cardImage.cardId !== null) {
       throw new ApiError(403, "FORBIDDEN", "Cannot delete image attached to a card");
     }

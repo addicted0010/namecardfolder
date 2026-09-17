@@ -21,14 +21,15 @@ API 层使用 Next.js App Router 的 Route Handlers，所有 API 路由均在 `/
 | POST | `/api/cards` | 创建名片（自动触发后台识别） | 是 |
 | GET | `/api/cards/[id]` | 获取名片详情 | 是 |
 | PUT | `/api/cards/[id]` | 更新名片字段 | 是 |
+| PATCH | `/api/cards/[id]` | 更新名片（替换图片并重新识别） | 是 |
 | DELETE | `/api/cards/[id]` | 删除名片 | 是 |
 | POST | `/api/cards/[id]/recognize` | 触发 AI 识别 | 是 |
 | GET | `/api/credits` | 获取当前用户今日 credit 状态 | 是 |
 | POST | `/api/upload` | 上传图片 | 是 |
 | DELETE | `/api/upload/[id]` | 删除孤儿图片 | 是 |
 | GET | `/api/images/[id]` | 获取图片内容（代理） | 是 |
-| GET | `/api/llm-logs` | LLM 日志列表 | 是 |
-| GET | `/api/llm-logs/[id]` | LLM 日志详情 | 是 |
+| GET | `/api/llm-logs` | LLM 日志列表 | 是（仅管理员） |
+| GET | `/api/llm-logs/[id]` | LLM 日志详情 | 是（仅管理员） |
 | GET | `/api/cron/recognize` | Cron 触发识别队列处理 | CRON_SECRET |
 
 ## 通用响应格式
@@ -63,8 +64,10 @@ API 层使用 Next.js App Router 的 Route Handlers，所有 API 路由均在 `/
 - `UNAUTHORIZED` — 未认证（401）
 - `NOT_FOUND` — 资源不存在（404）
 - `INVALID_CREDENTIALS` — 用户名/密码错误（401）
-- `USERNAME_TAKEN` — 用户名已占用（409）
+- `TOO_MANY_REQUESTS` — 触发限流（429，登录/上传/识别端点）
 - `NO_IMAGES` — 缺少图片（400）
+- `INVALID_IMAGES` — 图片无效或已被使用（400）
+- `IMAGE_UPDATE_CONFLICT` — 图片关联冲突（409）
 - `NOT_A_BUSINESS_CARD` — 非名片图片（422）
 - `PROCESSING_FAILED` — LLM 处理失败（502）
 - `DAILY_CREDIT_LIMIT_EXCEEDED` — 今日 credit 不足（429）
@@ -156,8 +159,21 @@ fullName、nameReading、company、title、email、phone、address、department�
 fullName、nameReading、company、title、email、phone、mobilePhone、address、website、department、fax、notes、source
 
 **安全机制：**
-- 使用 `updateMany` + `where: { id, userId }` 双重验证
+- 使用 `updateMany` + `where: { id, userId }` 双重验证，仅允许白名单字段更新
 - 空字符串转换为 null（清除字段值）
+
+### PATCH /api/cards/[id]
+
+更新名片（重新拍照）：用新上传的图片替换现有图片，并自动重新识别。
+
+**请求体：** `frontImageId`、`backImageId`（至少提供一个）、`source`（可选）
+
+**处理步骤（单事务）：**
+1. 验证名片归属与图片有效性（必须为当前用户的孤儿图片）
+2. 按新图片面数预扣每日 credit（余额不足返回 429 `DAILY_CREDIT_LIMIT_EXCEEDED`）
+3. 删除旧图片记录，关联新图片到名片
+4. 清空全部识别字段，状态重置为 PENDING
+5. 事务外删除旧图片文件，随后触发重新识别
 
 ### DELETE /api/cards/[id]
 

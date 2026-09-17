@@ -120,6 +120,26 @@ export async function reserveDailyCredits(
   return toStatus(date, limit, updated);
 }
 
+/**
+ * Give back credits reserved earlier today (e.g. when recognition ultimately
+ * failed). Never goes below zero; admin accounts have no usage rows.
+ */
+export async function refundDailyCredits(
+  userId: string,
+  credits: number,
+  client: PrismaClientLike = prisma
+): Promise<void> {
+  if (credits <= 0) return;
+
+  const date = getCreditDate();
+  await client.$executeRaw`
+    UPDATE "UserDailyCreditUsage"
+    SET "creditsUsed" = GREATEST(0, "creditsUsed" - ${credits}),
+        "updatedAt" = CURRENT_TIMESTAMP
+    WHERE "userId" = ${userId} AND "date" = CAST(${date} AS date)
+  `;
+}
+
 async function getDailyCreditLimit(client: PrismaClientLike): Promise<number> {
   const config = await client.systemConfig.findUnique({
     where: { key: DAILY_CREDIT_LIMIT_KEY },

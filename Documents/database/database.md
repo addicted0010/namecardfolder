@@ -85,6 +85,7 @@ graph TB
 | rawText | String? | OCR 原始文本 |
 | recognitionStatus | RecognitionStatus | 识别状态（枚举） |
 | viewedAt | DateTime? | 用户首次查看时间（null=未查看，用于 New 徽章） |
+| processingStartedAt | DateTime? | 本轮识别开始时间（用于 stale PROCESSING 状态回收） |
 | createdAt | DateTime | 创建时间 |
 | updatedAt | DateTime | 更新时间 |
 
@@ -100,6 +101,7 @@ graph TB
 | 字段 | 类型 | 说明 |
 |------|------|------|
 | id | String (cuid) | 主键 |
+| userId | String | 上传者 (FK → User.id)，上传时即写入，用于孤儿图片鉴权 |
 | cardId | String? | 所属名片 (FK → Card.id)，上传时为 null |
 | side | ImageSide | 正面/反面（枚举） |
 | storageKey | String | 存储系统中的键（路径或 blob 路径） |
@@ -108,9 +110,9 @@ graph TB
 | sizeBytes | Int | 文件大小（字节） |
 | createdAt | DateTime | 创建时间 |
 
-索引：`@@index([cardId])`
+索引：`@@index([cardId])`、`@@index([userId])`
 
-**设计要点**：`cardId` 允许为 null，因为图片先上传再关联到 Card。上传时图片是"孤儿"状态，创建 Card 后才关联。
+**设计要点**：`cardId` 允许为 null，因为图片先上传再关联到 Card。上传时图片是"孤儿"状态，创建 Card 后才关联。孤儿图片通过 `userId` 鉴权（仅上传者可访问/删除），并由 cron 任务清理超过 24 小时未关联的孤儿图片。
 
 ### LlmLog（LLM 调用日志）
 

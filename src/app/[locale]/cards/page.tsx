@@ -93,6 +93,16 @@ export default function CardsPage() {
     fetchCreditStatus();
   }, [fetchCreditStatus]);
 
+  // Open the upload modal when arriving from the home page shortcut
+  // ("/cards?action=upload").
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("action") === "upload") {
+      setShowUpload(true);
+      window.history.replaceState({}, "", window.location.pathname);
+    }
+  }, []);
+
   async function handleUploadComplete(frontId?: string, backId?: string, source?: string) {
     let errorShown = false;
     try {
@@ -172,10 +182,18 @@ export default function CardsPage() {
   async function handleBatchDelete() {
     setDeleting(true);
     try {
-      await Promise.all(
-        [...selectedIds].map((id) => fetch(`/api/cards/${id}`, { method: "DELETE" }))
+      const results = await Promise.allSettled(
+        [...selectedIds].map(async (id) => {
+          const res = await fetch(`/api/cards/${id}`, { method: "DELETE" });
+          if (!res.ok) throw new Error(`DELETE ${id} failed: ${res.status}`);
+        })
       );
-      toast.success(t("deleteSuccess"));
+      const failed = results.filter((r) => r.status === "rejected").length;
+      if (failed > 0) {
+        toast.error(t("deletePartialFailed", { failed }));
+      } else {
+        toast.success(t("deleteSuccess"));
+      }
       setDeleteConfirmOpen(false);
       setSelectMode(false);
       setSelectedIds(new Set());

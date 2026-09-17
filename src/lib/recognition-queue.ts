@@ -2,16 +2,21 @@ import { prisma } from "@/lib/prisma";
 import { getLLMProvider } from "@/lib/llm";
 import { processCardImage } from "@/lib/image-processing";
 import { readFile } from "fs/promises";
-import { join } from "path";
 import { AliyunOSSProvider } from "@/lib/storage/aliyun-oss";
+import { getLocalUploadPath } from "@/lib/storage/local-storage";
+import { refundDailyCredits } from "@/lib/credits";
+import { ApiError } from "@/lib/utils";
+
+/** Milliseconds after which a PROCESSING card is considered abandoned. */
+const STALE_PROCESSING_MS = 5 * 60 * 1000;
 
 /**
  * Fetch image buffer from storage URL.
  */
 async function fetchImageBuffer(storageUrl: string): Promise<Buffer> {
   if (storageUrl.startsWith("/uploads/")) {
-    const filePath = join(process.cwd(), "public", storageUrl);
-    return await readFile(filePath);
+    const storageKey = storageUrl.replace(/^\/uploads\//, "");
+    return await readFile(getLocalUploadPath(storageKey));
   } else if (storageUrl.startsWith("oss://")) {
     // Aliyun OSS: extract key and fetch via SDK
     const storageKey = storageUrl.replace("oss://", "");
@@ -33,9 +38,12 @@ async function fetchImageBuffer(storageUrl: string): Promise<Buffer> {
  * Flow: image processing (detect + crop) → OCR recognition.
  * Shared logic used by both the queue processor and the manual recognize API endpoint.
  *
- * Returns "SUCCESS" | "FAILED" | "RATE_LIMITED"
+ * Returns "SUCCESS" | "FAILED" | "RATE_LIMITED" | "SKIPPED"
+ * ("SKIPPED" = another worker already claimed the card).
  */
-export async function recognizeCard(cardId: string): Promise<"SUCCESS" | "FAILED" | "RATE_LIMITED"> {
+export async function recognizeCard(
+  cardId: string
+): Promise<"SUCCESS" | "FAILED" | "RATE_LIMITED" | "SKIPPED"> {
   const card = await prisma.card.findUnique({
     where: { id: cardId },
     include: { images: true },
@@ -44,16 +52,28 @@ export async function recognizeCard(cardId: string): Promise<"SUCCESS" | "FAILED
   if (!card || card.images.length === 0) {
     await prisma.card.update({
       where: { id: cardId },
-      data: { recognitionStatus: "FAILED" },
+      data: { recognitionStatus: "FAILED", processingStartedAt: null },
     }).catch(() => {});
     return "FAILED";
   }
 
-  // Update status to PROCESSING
-  await prisma.card.update({
-    where: { id: cardId },
-    data: { recognitionStatus: "PROCESSING" },
+  // Atomic claim: only one worker may process a card at a time.
+  const claimed = await prisma.card.updateMany({
+    where: {
+      id: cardId,
+      recognitionStatus: { in: ["PENDING", "FAILED"] },
+    },
+    data: { recognitionStatus: "PROCESSING", processingStartedAt: new Date() },
   });
+
+  if (claimed.count === 0) {
+    return "SKIPPED"; // Already processing (or state changed concurrently)
+  }
+
+  const refundOnFailure = () =>
+    refundDailyCredits(card.userId, card.images.length).catch((e) =>
+      console.error(`Credit refund failed for card ${cardId}:`, e)
+    );
 
   try {
     // Phase 1: Image processing (detect card region + crop + compress)
@@ -77,7 +97,8 @@ export async function recognizeCard(cardId: string): Promise<"SUCCESS" | "FAILED
           "card.jpg"
         );
 
-        // Update CardImage with processed file info
+        // Update CardImage with processed file info, then clean up the old
+        // object (upload-then-delete keeps the original recoverable on failure).
         await prisma.cardImage.update({
           where: { id: imgTyped.id },
           data: {
@@ -86,6 +107,9 @@ export async function recognizeCard(cardId: string): Promise<"SUCCESS" | "FAILED
             sizeBytes: processed.sizeBytes,
           },
         });
+        await processed.cleanupOld().catch((e) =>
+          console.error(`Cleanup of old image failed for ${imgTyped.id}:`, e)
+        );
 
         // Save LLM detection log
         await prisma.llmLog.create({
@@ -119,15 +143,6 @@ export async function recognizeCard(cardId: string): Promise<"SUCCESS" | "FAILED
           },
         });
 
-        // Check for rate limiting from detectCard
-        if (processed.log.responseStatus === 429) {
-          await prisma.card.update({
-            where: { id: cardId },
-            data: { recognitionStatus: "PENDING" },
-          });
-          return "RATE_LIMITED";
-        }
-
         // Use the processed buffer directly for OCR (avoid re-fetching)
         processedImages.push({
           base64: processed.buffer.toString("base64"),
@@ -142,10 +157,19 @@ export async function recognizeCard(cardId: string): Promise<"SUCCESS" | "FAILED
           if (apiErr.code === "NOT_A_BUSINESS_CARD") {
             await prisma.card.update({
               where: { id: cardId },
-              data: { recognitionStatus: "FAILED" },
+              data: { recognitionStatus: "FAILED", processingStartedAt: null },
             });
+            await refundOnFailure();
             return "FAILED";
           }
+        }
+        // Upstream rate limiting: back off and retry later
+        if (error instanceof ApiError && error.code === "LLM_RATE_LIMITED") {
+          await prisma.card.update({
+            where: { id: cardId },
+            data: { recognitionStatus: "PENDING", processingStartedAt: null },
+          });
+          return "RATE_LIMITED";
         }
         // For other processing errors, also mark FAILED
         throw error;
@@ -176,7 +200,7 @@ export async function recognizeCard(cardId: string): Promise<"SUCCESS" | "FAILED
     if (log.responseStatus === 429) {
       await prisma.card.update({
         where: { id: cardId },
-        data: { recognitionStatus: "PENDING" },
+        data: { recognitionStatus: "PENDING", processingStartedAt: null },
       });
       return "RATE_LIMITED";
     }
@@ -203,17 +227,32 @@ export async function recognizeCard(cardId: string): Promise<"SUCCESS" | "FAILED
         notes: str(result.notes) || card.notes,
         rawText: str(result.rawText) || card.rawText,
         recognitionStatus: log.errorMessage ? "FAILED" : "SUCCESS",
+        processingStartedAt: null,
       },
     });
 
-    return log.errorMessage ? "FAILED" : "SUCCESS";
+    if (log.errorMessage) {
+      await refundOnFailure();
+      return "FAILED";
+    }
+    return "SUCCESS";
   } catch (error) {
     console.error(`Recognition error for card ${cardId}:`, error);
     await prisma.card.update({
       where: { id: cardId },
-      data: { recognitionStatus: "FAILED" },
+      data: { recognitionStatus: "FAILED", processingStartedAt: null },
     }).catch(() => {});
+    await refundOnFailure();
     return "FAILED";
+  } finally {
+    // Safety net: never leave a card stuck in PROCESSING (a stale PROCESSING
+    // row permanently occupies a concurrency slot).
+    await prisma.card
+      .updateMany({
+        where: { id: cardId, recognitionStatus: "PROCESSING" },
+        data: { recognitionStatus: "FAILED", processingStartedAt: null },
+      })
+      .catch(() => {});
   }
 }
 
@@ -227,8 +266,22 @@ export async function processRecognitionQueue(): Promise<{
   succeeded: number;
   failed: number;
   rateLimited: number;
+  skipped: number;
+  reclaimed: number;
 }> {
-  const stats = { processed: 0, succeeded: 0, failed: 0, rateLimited: 0 };
+  const stats = { processed: 0, succeeded: 0, failed: 0, rateLimited: 0, skipped: 0, reclaimed: 0 };
+
+  // Reclaim abandoned PROCESSING slots (crashed workers, killed functions).
+  // Without this, leaked slots permanently block the whole pipeline.
+  const staleBefore = new Date(Date.now() - STALE_PROCESSING_MS);
+  const reclaimed = await prisma.card.updateMany({
+    where: {
+      recognitionStatus: "PROCESSING",
+      OR: [{ processingStartedAt: { lt: staleBefore } }, { processingStartedAt: null }],
+    },
+    data: { recognitionStatus: "PENDING", processingStartedAt: null },
+  });
+  stats.reclaimed = reclaimed.count;
 
   // Read config from SystemConfig
   const [maxConcurrencyConfig, minIntervalConfig] = await Promise.all([
@@ -236,8 +289,8 @@ export async function processRecognitionQueue(): Promise<{
     prisma.systemConfig.findUnique({ where: { key: "recognition_min_interval_ms" } }),
   ]);
 
-  const maxConcurrency = parseInt(maxConcurrencyConfig?.value || "5", 10);
-  const minIntervalMs = parseInt(minIntervalConfig?.value || "100", 10);
+  const maxConcurrency = Math.max(1, parseInt(maxConcurrencyConfig?.value || "5", 10) || 5);
+  const minIntervalMs = Math.max(0, parseInt(minIntervalConfig?.value || "100", 10) || 100);
 
   // Check how many are currently processing
   const currentProcessing = await prisma.card.count({
@@ -263,16 +316,21 @@ export async function processRecognitionQueue(): Promise<{
   }
 
   // Process each card sequentially with minimum interval
-  for (const { id } of pendingCards) {
+  for (let i = 0; i < pendingCards.length; i++) {
+    const { id } = pendingCards[i];
     const startTime = Date.now();
 
     // Retry logic with exponential backoff for rate limiting
-    let result: "SUCCESS" | "FAILED" | "RATE_LIMITED" = "FAILED";
+    let result: "SUCCESS" | "FAILED" | "RATE_LIMITED" | "SKIPPED" = "FAILED";
     let retries = 0;
     const maxRetries = 3;
 
     while (retries <= maxRetries) {
       result = await recognizeCard(id);
+
+      if (result === "SKIPPED") {
+        break; // Another worker owns this card
+      }
 
       if (result !== "RATE_LIMITED") {
         break;
@@ -286,6 +344,11 @@ export async function processRecognitionQueue(): Promise<{
       }
     }
 
+    if (result === "SKIPPED") {
+      stats.skipped++;
+      continue;
+    }
+
     stats.processed++;
     if (result === "SUCCESS") stats.succeeded++;
     else if (result === "RATE_LIMITED") stats.rateLimited++;
@@ -293,7 +356,7 @@ export async function processRecognitionQueue(): Promise<{
 
     // Enforce minimum interval between requests
     const elapsed = Date.now() - startTime;
-    if (elapsed < minIntervalMs && pendingCards.indexOf({ id }) < pendingCards.length - 1) {
+    if (elapsed < minIntervalMs && i < pendingCards.length - 1) {
       await sleep(minIntervalMs - elapsed);
     }
   }

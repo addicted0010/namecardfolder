@@ -11,8 +11,17 @@ const prisma = new PrismaClient({ adapter });
 
 async function main() {
   const username = process.env.SEED_USERNAME || "admin";
-  const password = process.env.SEED_PASSWORD || "admin123";
+  const password = process.env.SEED_PASSWORD;
   const displayName = process.env.SEED_DISPLAY_NAME || "Administrator";
+
+  // Never create the well-known admin/admin123 account in production.
+  if (process.env.NODE_ENV === "production" && !password) {
+    throw new Error(
+      "SEED_PASSWORD is required in production; refusing to seed the default weak credentials."
+    );
+  }
+  const effectivePassword = password || "admin123";
+  const isProduction = process.env.NODE_ENV === "production";
 
   // The admin account is linked to the first email in ADMIN_EMAILS so that
   // signing in with that Google account binds to (and unlocks admin on) this
@@ -27,7 +36,7 @@ async function main() {
   if (existing) {
     console.log(`User "${username}" already exists, skipping user seed.`);
   } else {
-    const passwordHash = await bcrypt.hash(password, 12);
+    const passwordHash = await bcrypt.hash(effectivePassword, 12);
 
     await prisma.user.create({
       data: {
@@ -35,7 +44,9 @@ async function main() {
         email: adminEmail,
         passwordHash,
         displayName,
-        isAdmin: true,
+        // Local trials get an admin; production seeds a regular user and
+        // admin rights come from ADMIN_EMAILS via Google sign-in.
+        isAdmin: !isProduction,
       },
     });
 

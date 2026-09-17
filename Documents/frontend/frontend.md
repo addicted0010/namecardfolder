@@ -115,17 +115,15 @@ graph TD
 **功能：**
 - 左侧：名片正反面图片预览
 - 右侧：12 个字段的编辑表单 + 备注文本域 + 来源文本域
-- 操作按钮：保存、删除、重新识别、查看日志（「查看日志」仅对管理员 `user.isAdmin` 可见）
-- 自动识别：URL 带 `?autoRecognize=1` 时自动触发
+- 操作按钮：保存、删除、更新（重新拍照）、查看日志（「查看日志」仅对管理员 `user.isAdmin` 可见）
 
 **响应式断点：** `min-[480px]:grid-cols-[280px_1fr]`（小于 480px 为单列堆叠）
 
-**自动识别逻辑：**
+**更新（重新拍照）流程：**
 ```
-条件：autoRecognize=1 且 card.status=PENDING 且 images.length>0
-→ 仅触发一次（useRef 标记）
-→ 调用 POST /api/cards/{id}/recognize
-→ 成功后更新表单字段
+点击「更新」→ 先拉取 /api/credits 展示余额 → 打开上传弹窗重新拍照
+→ PATCH /api/cards/{id}（替换图片 + 预扣 credit + 自动重新识别）
+→ 成功后用返回数据刷新表单字段；credit 不足时显示超限提示
 ```
 
 **上传流程说明：**

@@ -47,8 +47,7 @@
     "currentPasswordWrong": "現在のパスワードが正しくありません",
     "newPasswordSameAsOld": "新しいパスワードは現在のパスワードと異なるものを入力してください",
     "signInWithGoogle": "Google アカウントでログイン",
-    "orContinueWith": "または",
-    "googleOnlyAccount": "このアカウントはGoogleログインを使用しています。下のGoogleボタンをご利用ください。"
+    "orContinueWith": "または"
   },
   "cards": {
     "title": "名刺管理",
@@ -68,6 +67,7 @@
     "deleteCardConfirm": "この名刺を削除しますか？この操作は取り消せません。",
     "deleteFailed": "削除に失敗しました",
     "deleteSuccess": "名刺を削除しました",
+    "deletePartialFailed": "{failed}枚の名刺の削除に失敗しました。更新して再試行してください",
     "update": "更新",
     "updateCard": "名刺を更新",
     "updateSuccess": "名刺を更新しました",

@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { authenticate } from "@/lib/auth";
+import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { apiResponse, apiError, ApiError } from "@/lib/utils";
 
@@ -8,15 +8,19 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const auth = await authenticate();
-    if (!auth) {
+    // LLM logs expose prompt/model internals: admin-only feature.
+    const user = await getCurrentUser();
+    if (!user) {
       throw new ApiError(401, "UNAUTHORIZED", "Authentication required");
+    }
+    if (!user.isAdmin) {
+      throw new ApiError(403, "FORBIDDEN", "Admin access required");
     }
 
     const { id } = await params;
 
-    const log = await prisma.llmLog.findFirst({
-      where: { id, userId: auth.userId },
+    const log = await prisma.llmLog.findUnique({
+      where: { id },
     });
 
     if (!log) {

@@ -158,7 +158,7 @@ interface LLMLogEntry {
 
 1. **即时触发**：`POST /api/cards` 创建名片时先按图片面数预扣每日 credit，成功后通过 `after()` 回调触发 `processRecognitionQueue()`
 2. **手动触发**：`POST /api/cards/[id]/recognize` 会按当前名片图片数量再次消耗每日 credit
-3. **Cron 兜底**：`GET /api/cron/recognize` 每分钟由 Vercel Cron 调用，处理漏网之鱼
+3. **Cron 兜底**：`GET /api/cron/recognize` 每天一次由 Vercel Cron 调用（`vercel.json` 中配置为 `0 0 * * *`），处理漏网之鱼；同时回收卡在 PROCESSING 超过 5 分钟的卡片并清理超过 24 小时的孤儿图片。需配置 `CRON_SECRET`，未配置时端点直接返回 503（fail-closed）
 
 ### 队列处理逻辑 (`processRecognitionQueue`)
 
@@ -223,7 +223,7 @@ graph TD
 | `CLAUDE_BASE_URL` | Claude API 地址 | `https://api.anthropic.com` |
 | `CLAUDE_API_KEY` | Claude API 密钥 | — |
 | `CLAUDE_MODEL` | Claude 模型 | `claude-sonnet-4.6` |
-| `ALIBABA_BASE_URL` | 通义千问 API 地址 | `https://dashscope-intl.aliyuncs.com/compatible-mode/v1` |
+| `ALIBABA_BASE_URL` | 通义千问 API 地址 | `https://{WorkspaceId}.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1`（新加坡新版端点） |
 | `ALIBABA_API_KEY` | 通义千问 API 密钥 | — |
 | `ALIBABA_MODEL` | 通义千问模型 | `qwen3.7-plus` |
 
